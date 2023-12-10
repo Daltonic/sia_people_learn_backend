@@ -1,7 +1,6 @@
 import Controller from "@/utils/interfaces/controller.interface";
 import { Router, Request, Response, NextFunction } from "express";
 import UserService from "@/resources/user/user.service";
-import validateResource from "@/middlewares/validation.middleware";
 import {
   forgotPasswordSchema,
   registerSchema,
@@ -18,7 +17,7 @@ import {
 } from "./user.interface";
 import { StatusCodes } from "http-status-codes";
 import HttpException from "@/utils/exceptions/HttpException";
-import loggedIn from "@/middlewares/logged-in.middleware";
+import { loggedIn, validateResource } from "@/middlewares/index";
 
 class UserController implements Controller {
   public path = "/users";
@@ -72,7 +71,6 @@ class UserController implements Controller {
       const message = await this.userService.register(userInput);
       res.status(StatusCodes.CREATED).json({ msg: message });
     } catch (e: any) {
-      console.log(e);
       if (e.code === 11000) {
         next(new HttpException(StatusCodes.CONFLICT, e.message));
       } else {

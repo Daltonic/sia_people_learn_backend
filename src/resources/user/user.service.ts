@@ -1,4 +1,3 @@
-import generateAlphanumeric from "@/utils/generate-alphanum";
 import {
   ForgotPasswordInterface,
   RegisterInterface,
@@ -8,9 +7,8 @@ import {
 } from "@/resources/user/user.interface";
 import User from "./user.model";
 import argon2 from "argon2";
-import log from "@/utils/logger";
 import { nanoid } from "nanoid";
-import { AnyARecord } from "dns";
+import { generateAlphanumeric, log } from "@/utils/index";
 
 class UserService {
   private userModel = User;

@@ -2,11 +2,11 @@ import Controller from "@/utils/interfaces/controller.interface";
 import { NextFunction, Router, Request, Response } from "express";
 import SessionService from "@/resources/session/session.service";
 import { LoginInterface } from "@/resources/session/session.interface";
-import log from "@/utils/logger";
+import { log } from "@/utils/index";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
-import validateResource from "@/middlewares/validation.middleware";
 import { loginSchema } from "@/resources/session/session.validation";
+import { validateResource } from "@/middlewares/index";
 
 class SessionController implements Controller {
   public path = "/sessions";

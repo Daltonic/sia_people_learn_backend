@@ -4,8 +4,7 @@ import Controller from "@/utils/interfaces/controller.interface";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
-import deserialiseUser from "@/middlewares/deserialise-user.middleware";
-import errorMiddleware from "@/middlewares/error.middleware";
+import { deserialiseUser, errorMiddleware } from "./middlewares";
 
 class App {
   private express: Application;

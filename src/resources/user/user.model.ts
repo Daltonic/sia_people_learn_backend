@@ -9,7 +9,7 @@ export interface IUser extends Document {
   email: string;
   username: string;
   imgUrl?: string;
-  userType: "admin" | "instructor" | "user";
+  userType: "admin" | "creator" | "user";
   password: string;
   verificationCode: string;
   verified: boolean;
@@ -18,6 +18,7 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
+  courses?: Schema.Types.ObjectId[];
   validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -30,12 +31,13 @@ const UserSchema = new Schema<IUser>(
     imgUrl: { type: String },
     userType: {
       type: String,
-      enum: ["admin", "instructor", "user"],
+      enum: ["admin", "creator", "user"],
       default: "user",
     },
     password: { type: String, required: true },
     verificationCode: { type: String, default: () => nanoid() },
     verified: { type: Boolean, default: false },
+    courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
     recoveryCode: { type: String },
     rememberMe: { type: Boolean, default: false },
     lastLogin: { type: Date },
