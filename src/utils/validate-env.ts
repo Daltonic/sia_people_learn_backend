@@ -11,5 +11,6 @@ export default function validateEnv(): void {
     ACCESS_TOKEN_SECRET_KEY: str(),
     REFRESH_TOKEN_SECRET_KEY: str(),
     ORIGIN: url(),
+    LOG_LEVEL: str(),
   });
 }

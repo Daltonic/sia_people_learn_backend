@@ -1,3 +1,5 @@
+import log from "@/utils/logger";
+import argon2 from "argon2";
 import { Schema, model, Document } from "mongoose";
 import { nanoid } from "nanoid";
 
@@ -11,11 +13,12 @@ export interface IUser extends Document {
   password: string;
   verificationCode: string;
   verified: boolean;
-  recoveryCode?: string;
+  recoveryCode?: string | null;
   rememberMe: boolean;
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
+  validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -39,6 +42,18 @@ const UserSchema = new Schema<IUser>(
   },
   { timestamps: true }
 );
+
+UserSchema.methods.validatePassword = async function (
+  this: IUser,
+  candidatePassword: string
+): Promise<boolean> {
+  try {
+    return await argon2.verify(this.password, candidatePassword);
+  } catch (e: any) {
+    log.error(e, "Could not validate password");
+    return false;
+  }
+};
 
 const User = model<IUser>("User", UserSchema);
 
