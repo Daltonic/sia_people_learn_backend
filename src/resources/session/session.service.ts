@@ -1,8 +1,11 @@
 import User from "@/resources/user/user.model";
 import Session from "@/resources/session/session.model";
 import { LoginInterface } from "./session.interface";
-import { createAccessToken, createRefreshToken } from "@/utils/token";
-import { filteredUser } from "@/utils/response-filter";
+import {
+  createAccessToken,
+  createRefreshToken,
+  filteredUser,
+} from "@/utils/index";
 
 class SessionService {
   private userModel = User;
