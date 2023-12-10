@@ -13,6 +13,7 @@ const validateResource =
         query: req.query,
         params: req.params,
       });
+      next();
     } catch (e: any) {
       res.status(StatusCodes.BAD_REQUEST).send(e);
     }
