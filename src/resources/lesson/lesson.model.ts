@@ -5,10 +5,10 @@ export interface ILesson extends Document {
   overview: string;
   description: string;
   duration: number;
-  imgUrl?: string | null;
+  imageUrl?: string | null;
   videoUrl?: string | null;
   downloadableUrl?: string | null;
-  orderNumber: number;
+  order: number;
   courseId: Schema.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -20,10 +20,10 @@ const LessonSchema = new Schema<ILesson>(
     overview: { type: String, required: true },
     description: { type: String, required: true },
     duration: { type: Number, required: true },
-    imgUrl: { type: String },
+    imageUrl: { type: String },
     videoUrl: { type: String },
     downloadableUrl: { type: String },
-    orderNumber: { type: Number, required: true },
+    order: { type: Number, required: true, unique: true },
     courseId: { type: Schema.Types.ObjectId, ref: "Course" },
   },
   { timestamps: true }
