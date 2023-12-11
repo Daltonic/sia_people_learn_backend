@@ -5,6 +5,7 @@ import {
   createAccessToken,
   createRefreshToken,
   filteredUser,
+  verifyRefreshToken,
 } from "@/utils/index";
 
 class SessionService {
@@ -46,6 +47,54 @@ class SessionService {
       await user.save();
 
       return { user: filteredUser(user), accessToken, refreshToken };
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
+  }
+
+  public async refreshSession(refreshToken: string): Promise<string | Error> {
+    try {
+      // Decode the refresh token
+      const decodedToken = verifyRefreshToken<{ session: string }>(
+        refreshToken
+      );
+      if (!decodedToken) {
+        throw new Error("Could not refresh token");
+      }
+
+      // Fetch the user's session using the decoded token
+      const session = await this.sessionModel.findById(decodedToken.session);
+
+      if (!session || !session.valid) {
+        throw new Error("Could not refresh token");
+      }
+
+      // Fetch the user that created the session
+      const user = await this.userModel.findById(session.user);
+      if (!user) {
+        throw new Error("Could not refresh token");
+      }
+
+      // Create a new accessToken and send it back to the frontend
+      const accessToken = createAccessToken(user);
+
+      return accessToken;
+    } catch (e: any) {
+      throw new Error(e.message || "Error refreshing session");
+    }
+  }
+
+  public async logout(userId: string): Promise<string | Error> {
+    try {
+      // Fetch the current session
+      const session = await this.sessionModel.findOne({ user: userId });
+      if (!session) {
+        throw new Error("You are currently logged out");
+      }
+
+      await this.sessionModel.findByIdAndDelete(session._id);
+
+      return "Logout successful";
     } catch (e: any) {
       throw new Error(e.message);
     }
