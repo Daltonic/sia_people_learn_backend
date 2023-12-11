@@ -3,7 +3,7 @@ import { boolean, number, object, string, z } from "zod";
 export const createCourseSchema = object({
   body: object({
     name: string(),
-    price: number(),
+    price: number().positive(),
     description: string(),
     overview: string(),
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
@@ -15,7 +15,7 @@ export const createCourseSchema = object({
 export const updateCourseSchema = object({
   body: object({
     name: string().optional(),
-    price: number().optional(),
+    price: number().positive().optional(),
     description: string().optional(),
     overview: string().optional(),
     imageUrl: string().optional(),
