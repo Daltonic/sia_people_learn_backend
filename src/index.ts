@@ -6,6 +6,7 @@ import UserController from "@/resources/user/user.controller";
 import SessionController from "@/resources/session/session.controller";
 import CourseController from "@/resources/course/course.controller";
 import LessonController from "@/resources/lesson/lesson.controller";
+import AcademyController from "@/resources/academy/academy.controller";
 
 validateEnv();
 
@@ -15,6 +16,7 @@ const app = new App(
     new SessionController(),
     new CourseController(),
     new LessonController(),
+    new AcademyController(),
   ],
   Number(process.env.PORT)
 );
