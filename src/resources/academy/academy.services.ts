@@ -127,7 +127,7 @@ class AcademyService {
 
       // Only academy owner should be able to update the academy data
       if (String(academy.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not allowed to update this academy");
       }
 
       // Check if the tags Document exist, otherwise, create the documents. The new documents will be used to override any existing tags for the academy
@@ -310,7 +310,7 @@ class AcademyService {
       }
 
       if (String(academy.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not allowed to delete this academy");
       }
 
       await this.academyModel.findByIdAndDelete(academyId);

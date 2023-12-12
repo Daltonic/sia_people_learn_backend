@@ -11,7 +11,6 @@ import {
 } from "@/resources/academy/academy.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
-import isCreator from "@/middlewares/isCreator";
 import validateResource from "@/middlewares/validation.middleware";
 import {
   approveAcademySchema,
@@ -21,8 +20,7 @@ import {
   submitAcademySchema,
   updateAcademySchema,
 } from "@/resources/academy/academy.validation";
-import loggedIn from "@/middlewares/loggedIn.middleware";
-import isAdmin from "@/middlewares/isAdmin";
+import { loggedIn, isAdmin, isAdminOrInstructor } from "@/middlewares/index";
 
 class AcademyController implements Controller {
   public path = "/academies";
@@ -36,13 +34,13 @@ class AcademyController implements Controller {
   private initialiseRoutes = () => {
     this.router.post(
       `${this.path}/create`,
-      [isCreator, validateResource(createAcademySchema)],
+      [isAdminOrInstructor, validateResource(createAcademySchema)],
       this.createAcademy
     );
 
     this.router.put(
       `${this.path}/update/:academyId`,
-      [isCreator, validateResource(updateAcademySchema)],
+      [isAdminOrInstructor, validateResource(updateAcademySchema)],
       this.updateAcademy
     );
 
@@ -56,7 +54,7 @@ class AcademyController implements Controller {
 
     this.router.put(
       `${this.path}/submit/:academyId`,
-      [isCreator, validateResource(submitAcademySchema)],
+      [isAdminOrInstructor, validateResource(submitAcademySchema)],
       this.submitAcademy
     );
 
@@ -68,7 +66,7 @@ class AcademyController implements Controller {
 
     this.router.delete(
       `${this.path}/delete/:academyId`,
-      [isCreator, validateResource(deleteAcademySchema)],
+      [isAdminOrInstructor, validateResource(deleteAcademySchema)],
       this.deleteAcademy
     );
   };

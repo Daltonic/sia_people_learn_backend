@@ -20,7 +20,7 @@ import {
 } from "@/resources/course/course.validation";
 import {
   isAdmin,
-  isCreator,
+  isAdminOrInstructor,
   loggedIn,
   validateResource,
 } from "@/middlewares/index";
@@ -37,19 +37,19 @@ class CourseController implements Controller {
   private initialiseRoutes() {
     this.router.post(
       `${this.path}/create`,
-      [isCreator, validateResource(createCourseSchema)],
+      [isAdminOrInstructor, validateResource(createCourseSchema)],
       this.createCourse
     );
 
     this.router.put(
       `${this.path}/update/:courseId`,
-      [isCreator, validateResource(updateCourseSchema)],
+      [isAdminOrInstructor, validateResource(updateCourseSchema)],
       this.updateCourse
     );
 
     this.router.delete(
       `${this.path}/delete/:courseId`,
-      [isCreator, validateResource(deleteCourseSchema)],
+      [isAdminOrInstructor, validateResource(deleteCourseSchema)],
       this.deleteCourse
     );
 
@@ -63,7 +63,7 @@ class CourseController implements Controller {
 
     this.router.put(
       `${this.path}/submit/:courseId`,
-      [isCreator, validateResource(submitCourseSchema)],
+      [isAdminOrInstructor, validateResource(submitCourseSchema)],
       this.submitCourse
     );
 

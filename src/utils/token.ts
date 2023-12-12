@@ -7,7 +7,7 @@ import { filteredUser } from "./response-filter";
 export const createAccessToken = (user: IUser) => {
   const payload = filteredUser(user);
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET_KEY!, {
-    expiresIn: "10m",
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
   });
 };
 

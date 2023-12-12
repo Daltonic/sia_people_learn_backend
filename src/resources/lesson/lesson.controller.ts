@@ -15,7 +15,11 @@ import {
   fetchLessonSchema,
   updateLessonSchema,
 } from "@/resources/lesson/lesson.validation";
-import { isCreator, loggedIn, validateResource } from "@/middlewares/index";
+import {
+  isAdminOrInstructor,
+  loggedIn,
+  validateResource,
+} from "@/middlewares/index";
 
 class LessonController implements Controller {
   public path = "/lessons";
@@ -29,19 +33,19 @@ class LessonController implements Controller {
   private initialiseRoutes() {
     this.router.post(
       `${this.path}/create`,
-      [isCreator, validateResource(createLessonSchema)],
+      [isAdminOrInstructor, validateResource(createLessonSchema)],
       this.createLesson
     );
 
     this.router.put(
       `${this.path}/update/:lessonId`,
-      [isCreator, validateResource(updateLessonSchema)],
+      [isAdminOrInstructor, validateResource(updateLessonSchema)],
       this.updateLesson
     );
 
     this.router.delete(
       `${this.path}/delete/:lessonId`,
-      [isCreator, validateResource(deleteLessonSchema)],
+      [isAdminOrInstructor, validateResource(deleteLessonSchema)],
       this.deleteLesson
     );
 

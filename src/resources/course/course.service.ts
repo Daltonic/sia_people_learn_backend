@@ -88,7 +88,7 @@ class CourseService {
 
       // Only a course creator should be able to update the course
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not allowed to updated this course");
       }
 
       if (name) {
@@ -139,7 +139,7 @@ class CourseService {
       }
 
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not authorised to delete this course");
       }
 
       // Delete the course from the user document

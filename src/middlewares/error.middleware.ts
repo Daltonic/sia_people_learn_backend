@@ -1,5 +1,6 @@
 import HttpException from "@/utils/exceptions/HttpException";
 import { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
 
 export default function errorMiddleware(
   error: HttpException,
