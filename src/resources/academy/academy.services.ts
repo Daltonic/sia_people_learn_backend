@@ -200,7 +200,23 @@ class AcademyService {
 
   public async fetchAcademy(academyId: string): Promise<object | Error> {
     try {
-      const academy = await this.academyModel.findById(academyId);
+      const academy = await this.academyModel
+        .findById(academyId)
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
+        })
+        .populate({
+          path: "courses",
+          model: this.courseModel,
+          select: "_id name",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       if (!academy) {
         throw new Error("Academy not found");
       }
@@ -215,11 +231,23 @@ class AcademyService {
   public async fetchAcademies(): Promise<object | Error> {
     try {
       // todo: Implement search and filter features
-      const academies = await this.courseModel.find({});
+      const academies = await this.courseModel
+        .find({})
+        .populate({
+          path: "courses",
+          model: this.courseModel,
+          select: "_id name",
+          strictPopulate: false,
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       return academies;
     } catch (e: any) {
       log.error(e.message);
-      throw new Error("Error fetching Academies");
+      throw new Error(e.message || "Error fetching Academies");
     }
   }
 

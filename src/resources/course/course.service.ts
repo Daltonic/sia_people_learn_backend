@@ -6,11 +6,13 @@ import {
 } from "@/resources/course/course.interface";
 import log from "@/utils/logger";
 import Tag from "@/resources/tag/tag.model";
+import Lesson from "@/resources/lesson/lesson.model";
 
 class CourseService {
   private userModel = User;
   private courseModel = Course;
   private tagModel = Tag;
+  private lessonModel = Lesson;
 
   public async createCourse(
     courseInput: CreateCourseInterface,
@@ -160,7 +162,23 @@ class CourseService {
 
   public async fetchCourse(courseId: string): Promise<object | Error> {
     try {
-      const course = await this.courseModel.findById(courseId);
+      const course = await this.courseModel
+        .findById(courseId)
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
+        })
+        .populate({
+          path: "lessons",
+          model: this.lessonModel,
+          select: "_id title",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       if (!course) {
         throw new Error("Course not found");
       }
@@ -175,7 +193,18 @@ class CourseService {
   public async fetchCourses(): Promise<object | Error> {
     try {
       //todo: Implement search and filter features
-      const courses = this.courseModel.find({});
+      const courses = this.courseModel
+        .find({})
+        .populate({
+          path: "lessons",
+          model: this.lessonModel,
+          select: "_id title",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       return courses;
     } catch (e: any) {
       log.error(e.message);
