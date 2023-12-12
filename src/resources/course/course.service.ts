@@ -5,15 +5,19 @@ import {
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
 import log from "@/utils/logger";
+import Tag from "@/resources/tag/tag.model";
 
 class CourseService {
   private userModel = User;
   private courseModel = Course;
+  private tagModel = Tag;
 
   public async createCourse(
     courseInput: CreateCourseInterface,
     userId: string
   ): Promise<object | Error> {
+    const { name, price, description, overview, difficulty, tags, imageUrl } =
+      courseInput;
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -21,8 +25,35 @@ class CourseService {
       }
 
       const newCourse = await this.courseModel.create({
-        ...courseInput,
-        userId: userId,
+        name,
+        price,
+        description,
+        overview,
+        difficulty,
+        userId,
+        imageUrl: imageUrl || null,
+      });
+
+      // Get the tags if they exist, otherwise, create the tags
+      const tagDocumentIds = [];
+      if (tags) {
+        for (const tag of tags) {
+          const _tag = await this.tagModel.findOneAndUpdate(
+            { name: { $regex: new RegExp(`^${tag}$`, "i") } },
+            {
+              $setOnInsert: { name: tag.toUpperCase() },
+              $push: { academies: newCourse._id },
+            },
+            { upsert: true, new: true }
+          );
+
+          tagDocumentIds.push(_tag._id);
+        }
+      }
+
+      // Now add the tags to the academy document
+      await this.courseModel.findByIdAndUpdate(newCourse._id, {
+        $push: { tags: { $each: tagDocumentIds } },
       });
 
       // Update user with the course content to allow for seamless querying

@@ -81,6 +81,7 @@ class CourseController implements Controller {
   ): Promise<Response | void> => {
     const courseInput = req.body;
     const { _id: userId } = res.locals.user;
+
     try {
       const course = await this.courseService.createCourse(courseInput, userId);
       res.status(StatusCodes.CREATED).json(course);
