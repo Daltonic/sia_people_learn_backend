@@ -2,7 +2,7 @@
 
 import jwt from "jsonwebtoken";
 import { IUser } from "@/resources/user/user.model";
-import { filteredUser } from "./response-filter";
+import { filteredUser } from "./responseFilter";
 
 export const createAccessToken = (user: IUser) => {
   const payload = filteredUser(user);

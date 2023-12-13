@@ -8,6 +8,7 @@ import CourseController from "@/resources/course/course.controller";
 import LessonController from "@/resources/lesson/lesson.controller";
 import AcademyController from "@/resources/academy/academy.controller";
 import WishlistController from "@/resources/wishlist/wishlist.controller";
+import PromoController from "@/resources/promo/promo.controllers";
 
 validateEnv();
 
@@ -19,6 +20,7 @@ const app = new App(
     new LessonController(),
     new AcademyController(),
     new WishlistController(),
+    new PromoController(),
   ],
   Number(process.env.PORT)
 );

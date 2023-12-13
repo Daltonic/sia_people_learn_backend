@@ -13,5 +13,6 @@ export default function validateEnv(): void {
     ORIGIN: url(),
     LOG_LEVEL: str(),
     ACCESS_TOKEN_EXPIRES_IN: str(),
+    MAXIMUM_INSTRUCTOR_PROMO: str(),
   });
 }
