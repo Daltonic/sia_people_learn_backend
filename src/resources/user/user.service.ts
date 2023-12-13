@@ -4,6 +4,8 @@ import {
   VerifyUserInterface,
   ResetPasswordInterface,
   UpdatePasswordInterface,
+  UpgradeUserInterface,
+  DowngradeUserInterface,
 } from "@/resources/user/user.interface";
 import User from "./user.model";
 import argon2 from "argon2";
@@ -166,6 +168,61 @@ class UserService {
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message);
+    }
+  }
+
+  public async upgradeUser(
+    upgradeInput: UpgradeUserInterface
+  ): Promise<string | Error> {
+    const { userId, upgradeUserTo } = upgradeInput;
+    try {
+      // Ensure that the user currently exists
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("This user does not exist");
+      }
+
+      if (user.userType === upgradeUserTo) {
+        return `This user is already an ${upgradeUserTo}`;
+      }
+
+      user.userType = upgradeUserTo;
+      await user.save();
+
+      return `User has been successfully upgraded to an ${upgradeUserTo}`;
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error upgrading user");
+    }
+  }
+
+  public async downgradeUser(
+    downgradeInput: DowngradeUserInterface
+  ): Promise<string | Error> {
+    const { userId, downgradeUserTo } = downgradeInput;
+
+    try {
+      // Ensure that the user exists
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("This user does not exist");
+      }
+
+      if (user.userType === downgradeUserTo) {
+        return `This user is already ${
+          downgradeUserTo === "instructor" ? "an" : "a"
+        } ${downgradeUserTo}`;
+      }
+
+      user.userType = downgradeUserTo;
+      await user.save();
+
+      return `User has been successfully downgraded to ${
+        downgradeUserTo === "instructor" ? "an" : "a"
+      } ${downgradeUserTo}`;
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error downgrading user");
     }
   }
 }

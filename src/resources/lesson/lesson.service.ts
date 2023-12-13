@@ -36,7 +36,9 @@ class LessonService {
 
       // Ensure that only the course creator can update the course
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error(
+          "User must be course instructor to create a lesson for this course"
+        );
       }
 
       // If no order is provided, assign a default order using the number of lessons that has been assigned to the course
@@ -67,6 +69,11 @@ class LessonService {
       return lesson;
     } catch (e: any) {
       log.error(e.message);
+      if (e.code && e.code === 11000) {
+        e.message = `Duplicate value entered for ${Object.keys(
+          e.keyValue
+        )} field.`;
+      }
       throw new Error(e.message || "Error creating lesson");
     }
   }
@@ -100,7 +107,7 @@ class LessonService {
 
       // Confirm that the current user is the course creator
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not authorised to update this lesson");
       }
 
       // If duration is available, update the course duration to reflect the current time
@@ -151,9 +158,9 @@ class LessonService {
         throw new Error("Course not found");
       }
 
-      // Ensure that only the course creator can update the course
+      // Ensure that only the lesson creator can delete this lesson
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not authorised to delete this lesson");
       }
 
       // Reduced the lesson duration from the course duration and remove the lessons Id from lessons in the course model

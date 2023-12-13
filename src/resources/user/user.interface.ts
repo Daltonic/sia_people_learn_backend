@@ -1,9 +1,11 @@
 import { TypeOf } from "zod";
 import {
+  downgradeUserSchema,
   forgotPasswordSchema,
   registerSchema,
   resetPasswordSchema,
   updatePasswordSchema,
+  upgradeUserSchema,
   verifyUserSchema,
 } from "@/resources/user/user.validation";
 
@@ -16,3 +18,5 @@ export type ResetPasswordInterface = TypeOf<typeof resetPasswordSchema>;
 export type UpdatePasswordInterface = TypeOf<
   typeof updatePasswordSchema
 >["body"];
+export type UpgradeUserInterface = TypeOf<typeof upgradeUserSchema>["body"];
+export type DowngradeUserInterface = TypeOf<typeof downgradeUserSchema>["body"];

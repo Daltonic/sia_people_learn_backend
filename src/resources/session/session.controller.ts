@@ -26,7 +26,7 @@ class SessionController implements Controller {
       this.login
     );
 
-    this.router.get(`${this.path}/refresh`, this.refresh);
+    this.router.get(`${this.path}/refresh `, this.refresh);
 
     this.router.delete(`${this.path}/logout`, loggedIn, this.logout);
   }

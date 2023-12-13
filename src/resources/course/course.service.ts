@@ -5,15 +5,21 @@ import {
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
 import log from "@/utils/logger";
+import Tag from "@/resources/tag/tag.model";
+import Lesson from "@/resources/lesson/lesson.model";
 
 class CourseService {
   private userModel = User;
   private courseModel = Course;
+  private tagModel = Tag;
+  private lessonModel = Lesson;
 
   public async createCourse(
     courseInput: CreateCourseInterface,
     userId: string
   ): Promise<object | Error> {
+    const { name, price, description, overview, difficulty, tags, imageUrl } =
+      courseInput;
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -21,8 +27,35 @@ class CourseService {
       }
 
       const newCourse = await this.courseModel.create({
-        ...courseInput,
-        userId: userId,
+        name,
+        price,
+        description,
+        overview,
+        difficulty,
+        userId,
+        imageUrl: imageUrl || null,
+      });
+
+      // Get the tags if they exist, otherwise, create the tags
+      const tagDocumentIds = [];
+      if (tags) {
+        for (const tag of tags) {
+          const _tag = await this.tagModel.findOneAndUpdate(
+            { name: { $regex: new RegExp(`^${tag}$`, "i") } },
+            {
+              $setOnInsert: { name: tag.toUpperCase() },
+              $push: { academies: newCourse._id },
+            },
+            { upsert: true, new: true }
+          );
+
+          tagDocumentIds.push(_tag._id);
+        }
+      }
+
+      // Now add the tags to the academy document
+      await this.courseModel.findByIdAndUpdate(newCourse._id, {
+        $push: { tags: { $each: tagDocumentIds } },
       });
 
       // Update user with the course content to allow for seamless querying
@@ -55,7 +88,7 @@ class CourseService {
 
       // Only a course creator should be able to update the course
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not allowed to updated this course");
       }
 
       if (name) {
@@ -106,7 +139,7 @@ class CourseService {
       }
 
       if (String(course.userId) !== userId) {
-        throw new Error("User not authorised");
+        throw new Error("You are not authorised to delete this course");
       }
 
       // Delete the course from the user document
@@ -129,7 +162,23 @@ class CourseService {
 
   public async fetchCourse(courseId: string): Promise<object | Error> {
     try {
-      const course = await this.courseModel.findById(courseId);
+      const course = await this.courseModel
+        .findById(courseId)
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
+        })
+        .populate({
+          path: "lessons",
+          model: this.lessonModel,
+          select: "_id title",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       if (!course) {
         throw new Error("Course not found");
       }
@@ -144,7 +193,18 @@ class CourseService {
   public async fetchCourses(): Promise<object | Error> {
     try {
       //todo: Implement search and filter features
-      const courses = this.courseModel.find({});
+      const courses = this.courseModel
+        .find({})
+        .populate({
+          path: "lessons",
+          model: this.lessonModel,
+          select: "_id title",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "firstName lastName username",
+        });
       return courses;
     } catch (e: any) {
       log.error(e.message);

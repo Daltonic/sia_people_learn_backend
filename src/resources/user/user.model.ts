@@ -9,7 +9,7 @@ export interface IUser extends Document {
   email: string;
   username: string;
   imgUrl?: string;
-  userType: "admin" | "creator" | "user";
+  userType: "admin" | "instructor" | "user";
   password: string;
   verificationCode: string;
   verified: boolean;
@@ -31,7 +31,7 @@ const UserSchema = new Schema<IUser>(
     imgUrl: { type: String },
     userType: {
       type: String,
-      enum: ["admin", "creator", "user"],
+      enum: ["admin", "instructor", "user"],
       default: "user",
     },
     password: { type: String, required: true },

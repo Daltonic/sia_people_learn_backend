@@ -7,6 +7,8 @@ import {
   resetPasswordSchema,
   verifyUserSchema,
   updatePasswordSchema,
+  upgradeUserSchema,
+  downgradeUserSchema,
 } from "@/resources/user/user.validation";
 import {
   ForgotPasswordInterface,
@@ -14,10 +16,12 @@ import {
   VerifyUserInterface,
   ResetPasswordInterface,
   UpdatePasswordInterface,
-} from "./user.interface";
+  UpgradeUserInterface,
+  DowngradeUserInterface,
+} from "@/resources/user/user.interface";
 import { StatusCodes } from "http-status-codes";
 import HttpException from "@/utils/exceptions/HttpException";
-import { loggedIn, validateResource } from "@/middlewares/index";
+import { isAdmin, loggedIn, validateResource } from "@/middlewares/index";
 
 class UserController implements Controller {
   public path = "/users";
@@ -57,6 +61,18 @@ class UserController implements Controller {
       `${this.path}/updatePassword`,
       [loggedIn, validateResource(updatePasswordSchema)],
       this.updatePassword
+    );
+
+    this.router.put(
+      `${this.path}/upgrade`,
+      [isAdmin, validateResource(upgradeUserSchema)],
+      this.upgradeUser
+    );
+
+    this.router.put(
+      `${this.path}/downgrade`,
+      [isAdmin, validateResource(downgradeUserSchema)],
+      this.downgradeUser
     );
   }
 
@@ -148,6 +164,34 @@ class UserController implements Controller {
         userId
       );
       res.status(StatusCodes.OK).json({ msg: message });
+    } catch (e: any) {
+      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private upgradeUser = async (
+    req: Request<{}, {}, UpgradeUserInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const upgradeInput = req.body;
+    try {
+      const message = await this.userService.upgradeUser(upgradeInput);
+      res.status(StatusCodes.OK).send(message);
+    } catch (e: any) {
+      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private downgradeUser = async (
+    req: Request<{}, {}, DowngradeUserInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const downgradeInput = req.body;
+    try {
+      const message = await this.userService.downgradeUser(downgradeInput);
+      res.status(StatusCodes.OK).send(message);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }

@@ -1,17 +1,17 @@
 import deserialiseUser from "./deserialiseUser.middleware";
 import errorMiddleware from "./error.middleware";
 import isAdmin from "./isAdmin";
-import isAdminOrCreator from "./isAdminOrCreator";
-import isCreator from "./isCreator";
+import isAdminOrInstructor from "./isAdminOrInstructor";
+import isInstructor from "./isInstructor";
 import loggedIn from "./loggedIn.middleware";
 import validateResource from "./validation.middleware";
 
 export {
   deserialiseUser,
   errorMiddleware,
-  isAdminOrCreator,
+  isAdminOrInstructor,
   loggedIn,
   validateResource,
-  isCreator,
+  isInstructor,
   isAdmin,
 };

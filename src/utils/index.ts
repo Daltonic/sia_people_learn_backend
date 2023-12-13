@@ -1,13 +1,13 @@
-import generateAlphanumeric from "./generate-alphanum";
+import generateAlphanumeric from "./generateAlphanum";
 import log from "./logger";
-import { filteredUser } from "./response-filter";
+import { filteredUser } from "./responseFilter";
 import {
   createAccessToken,
   createRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
 } from "./token";
-import validateEnv from "./validate-env";
+import validateEnv from "./validateEnv";
 
 export {
   generateAlphanumeric,

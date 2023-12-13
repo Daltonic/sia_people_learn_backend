@@ -1,6 +1,6 @@
 // Validation for all user payloads
 
-import { object, string } from "zod";
+import { object, string, z } from "zod";
 
 export const registerSchema = object({
   body: object({
@@ -63,5 +63,19 @@ export const updatePasswordSchema = object({
     newPassword: string({
       required_error: "New Password is required",
     }),
+  }),
+});
+
+export const upgradeUserSchema = object({
+  body: object({
+    userId: string(),
+    upgradeUserTo: z.enum(["instructor", "admin"]),
+  }),
+});
+
+export const downgradeUserSchema = object({
+  body: object({
+    userId: string(),
+    downgradeUserTo: z.enum(["instructor", "user"]),
   }),
 });
