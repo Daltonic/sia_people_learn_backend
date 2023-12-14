@@ -90,11 +90,17 @@ class WishlistService {
   public async fetchWishlists(): Promise<object | Error> {
     try {
       //todo: Filtering and search, populate the product
-      const wishlists = await this.wishlistModel.find({}).populate({
-        path: "userId",
-        model: this.userModel,
-        select: "_id firstName lastName username",
-      });
+      const wishlists = await this.wishlistModel
+        .find({})
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id firstName lastName username",
+        })
+        .populate({
+          path: "productId",
+          select: "name price description overview difficulty duration",
+        });
 
       return wishlists;
     } catch (e: any) {

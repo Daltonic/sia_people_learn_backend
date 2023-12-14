@@ -128,7 +128,7 @@ class CourseController implements Controller {
     const { _id: userId } = res.locals.user;
 
     try {
-      const message = this.courseService.deleteCourse(courseId, userId);
+      const message = await this.courseService.deleteCourse(courseId, userId);
       res.status(StatusCodes.OK).send(message);
     } catch (e: any) {
       if (e.message === "User not authorised") {

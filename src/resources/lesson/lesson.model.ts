@@ -23,7 +23,7 @@ const LessonSchema = new Schema<ILesson>(
     imageUrl: { type: String },
     videoUrl: { type: String },
     downloadableUrl: { type: String },
-    order: { type: Number, required: true },
+    order: { type: Number, default: 0 },
     courseId: { type: Schema.Types.ObjectId, ref: "Course" },
   },
   { timestamps: true }

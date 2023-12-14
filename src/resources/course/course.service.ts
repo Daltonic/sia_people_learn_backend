@@ -156,7 +156,7 @@ class CourseService {
       return "Course successfully deleted";
     } catch (e: any) {
       log.error(e.message);
-      throw new Error("Error deleting Course");
+      throw new Error(e.message || "Error deleting Course");
     }
   }
 
@@ -204,6 +204,11 @@ class CourseService {
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
+        })
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
         });
       return courses;
     } catch (e: any) {
