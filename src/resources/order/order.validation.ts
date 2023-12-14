@@ -2,16 +2,11 @@ import { number, object, string, z } from "zod";
 
 export const createOrderSchema = object({
   body: object({
-    userId: string(),
-    promoCode: string().optional(),
-    promoDiscount: number(),
+    promoId: string().optional(),
     total: number(),
-    transactionRef: string().optional(),
+    transactionRef: string(),
     paymentType: z.enum(["Stripe", "Crypto"]),
     grandTotal: number(),
-  }).refine((data) => data.promoCode && data.promoDiscount, {
-    message: "Promo discount must be provided for the corresponding promocode",
-    path: ["promoDiscount"],
   }),
 });
 
