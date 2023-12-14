@@ -173,7 +173,7 @@ class AcademyService {
       }
 
       // Update the document
-      await this.academyModel.findByIdAndUpdate(
+      const updatedAcademy = await this.academyModel.findByIdAndUpdate(
         academyId,
         {
           name: name || academy.name,
@@ -191,7 +191,7 @@ class AcademyService {
         { new: true }
       );
 
-      return { academy, coursesNotFound };
+      return { updatedAcademy, coursesNotFound };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error updating Academy");
@@ -231,7 +231,7 @@ class AcademyService {
   public async fetchAcademies(): Promise<object | Error> {
     try {
       // todo: Implement search and filter features
-      const academies = await this.courseModel
+      const academies = await this.academyModel
         .find({})
         .populate({
           path: "courses",
@@ -243,6 +243,12 @@ class AcademyService {
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
+        })
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
+          strictPopulate: false,
         });
       return academies;
     } catch (e: any) {
