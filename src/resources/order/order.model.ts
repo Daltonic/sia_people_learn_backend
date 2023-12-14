@@ -4,7 +4,7 @@ import { Document, Schema, model } from "mongoose";
 export interface IOrder extends Document {
   userId: Schema.Types.ObjectId;
   orderCode: string;
-  promoCode?: string;
+  promoId?: Schema.Types.ObjectId;
   total: number;
   transactionRef: string;
   paymentType: "Stripe" | "Crypto";
@@ -17,7 +17,7 @@ const OrderSchema = new Schema<IOrder>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     orderCode: { type: String, default: generateAlphanumeric(10) },
-    promoCode: { type: String },
+    promoId: { type: Schema.Types.ObjectId, ref: "Promo" },
     total: { type: Number, required: true },
     transactionRef: { type: String, default: generateAlphanumeric(10) },
     paymentType: { type: String, enum: ["Stripe", "Crypto"], required: true },
