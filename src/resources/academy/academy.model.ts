@@ -13,6 +13,7 @@ export interface IAcademy extends Document {
   approved: boolean;
   orderCount: number;
   rating?: number | null;
+  reviewsCount: number | null;
   courses: Schema.Types.ObjectId[];
   highlights: string[];
   whatToLearn: string[];
@@ -39,6 +40,7 @@ const AcademySchema = new Schema<IAcademy>(
     approved: { type: Boolean, default: false },
     orderCount: { type: Number, default: 0 },
     rating: { type: Number, default: null },
+    reviewsCount: { type: Number, default: null },
     courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
     highlights: [{ type: String }],
     whatToLearn: [{ type: String }],

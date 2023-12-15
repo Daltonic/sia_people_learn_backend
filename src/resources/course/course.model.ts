@@ -13,6 +13,7 @@ export interface ICourse extends Document {
   submitted: boolean;
   approved: boolean;
   rating?: number;
+  reviewsCount?: number | null;
   tags: string[];
   userId: Schema.Types.ObjectId;
   lessons?: Schema.Types.ObjectId[];
@@ -38,6 +39,7 @@ const CourseSchema = new Schema<ICourse>(
     submitted: { type: Boolean, default: false },
     approved: { type: Boolean, default: false },
     rating: { type: Number },
+    reviewsCount: { type: Number, default: null },
     tags: [{ type: String }],
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     lessons: [{ type: Schema.Types.ObjectId, ref: "Lesson" }],
