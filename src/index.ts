@@ -13,6 +13,7 @@ import OrderController from "@/resources/order/order.controller";
 import SubscriptionController from "@/resources/subscription/subscription.controller";
 import ReviewController from "@/resources/review/review.controller";
 import TestimonyController from "@/resources/testimony/testimony.controller";
+import SiteSettingsController from "@/resources/settings/settings.controller";
 
 validateEnv();
 
@@ -29,6 +30,7 @@ const app = new App(
     new SubscriptionController(),
     new ReviewController(),
     new TestimonyController(),
+    new SiteSettingsController(),
   ],
   Number(process.env.PORT)
 );
