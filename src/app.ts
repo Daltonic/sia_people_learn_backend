@@ -4,6 +4,7 @@ import Controller from "@/utils/interfaces/controller.interface";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
+import passport from "passport";
 import { deserialiseUser, errorMiddleware } from "./middlewares";
 
 class App {
@@ -37,6 +38,7 @@ class App {
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
     this.express.use(compression());
+    this.express.use(passport.initialize());
     this.express.use(deserialiseUser);
   }
 

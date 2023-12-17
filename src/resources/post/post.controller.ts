@@ -5,6 +5,7 @@ import {
   CreatePostInterface,
   DeletePostInterface,
   FetchPostInterface,
+  FetchPostsInterface,
   PublishPostInterface,
   UpdatePostInterface,
 } from "@/resources/post/post.interface";
@@ -53,7 +54,7 @@ class PostController implements Controller {
       this.publishPost
     );
 
-    this.router.get(`${this.path}/user`, [loggedIn], this.fetchUserPosts);
+    this.router.get(`${this.path}/user/posts`, [loggedIn], this.fetchUserPosts);
 
     this.router.get(`${this.path}`, [loggedIn], this.fetchPosts);
 
@@ -139,7 +140,8 @@ class PostController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
-    const { _id: userId } = req.params;
+    const { _id: userId } = res.locals.user;
+
     try {
       const posts = await this.postService.fetchUserPosts(userId);
       res.status(StatusCodes.OK).json(posts);
@@ -149,12 +151,16 @@ class PostController implements Controller {
   };
 
   private fetchPosts = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchPostsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const { parentsOnly, publishedOnly } = req.query;
     try {
-      const posts = await this.postService.fetchPosts();
+      const posts = await this.postService.fetchPosts(
+        parentsOnly === "true",
+        publishedOnly === "true"
+      );
       res.status(StatusCodes.OK).json(posts);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

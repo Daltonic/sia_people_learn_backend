@@ -159,6 +159,12 @@ class PostService {
 
   public async fetchUserPosts(userId: string): Promise<object | Error> {
     try {
+      const user = await this.userModel.findById(userId);
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       // Todo: Pagination and searching
       const posts = await this.postModel.find({ userId }).populate({
         path: "comments",
@@ -167,16 +173,19 @@ class PostService {
       });
       return posts;
     } catch (e: any) {
-      log.error(e.message);
+      log.error(e);
       throw new Error(e.message || "Error fetching User's Posts");
     }
   }
 
-  public async fetchPosts(): Promise<object | Error> {
+  public async fetchPosts(
+    parentsOnly: boolean,
+    publishedOnly: boolean
+  ): Promise<object | Error> {
     try {
       // todo: pagination, sorting, filter
       const posts = await this.postModel
-        .find({})
+        .find({ published: publishedOnly })
         .populate({
           path: "userId",
           model: this.userModel,
