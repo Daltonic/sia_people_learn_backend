@@ -14,6 +14,7 @@ import SubscriptionController from "@/resources/subscription/subscription.contro
 import ReviewController from "@/resources/review/review.controller";
 import TestimonyController from "@/resources/testimony/testimony.controller";
 import SiteSettingsController from "@/resources/settings/settings.controller";
+import PostController from "@/resources/post/post.controller";
 
 validateEnv();
 
@@ -31,6 +32,7 @@ const app = new App(
     new ReviewController(),
     new TestimonyController(),
     new SiteSettingsController(),
+    new PostController(),
   ],
   Number(process.env.PORT)
 );
