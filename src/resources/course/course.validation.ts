@@ -9,6 +9,8 @@ export const createCourseSchema = object({
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
     tags: string().array().optional(),
     imageUrl: string().optional(),
+    requirements: string().array(),
+    highlights: string().array(),
   }),
 });
 
@@ -19,8 +21,10 @@ export const updateCourseSchema = object({
     description: string().optional(),
     overview: string().optional(),
     imageUrl: string().optional(),
-    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
+    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
     tags: string().array().optional(),
+    requirements: string().array().optional(),
+    highlights: string().array().optional(),
   }),
   params: object({
     courseId: string(),
@@ -51,5 +55,16 @@ export const submitCourseSchema = object({
 export const approveCourseSchema = object({
   params: object({
     courseId: string(),
+  }),
+});
+
+export const fetchCoursesSchema = object({
+  query: object({
+    page: string().optional(),
+    pageSize: string().optional(),
+    searchQuery: string().optional(),
+    filter: z.enum(["newest", "recommended"]).default("newest"),
+    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
+    approvedOnly: z.enum(["true", "false"]).default("false"),
   }),
 });

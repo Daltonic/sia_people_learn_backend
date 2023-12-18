@@ -16,7 +16,7 @@ export interface IAcademy extends Document {
   reviewsCount: number | null;
   courses: Schema.Types.ObjectId[];
   highlights: string[];
-  whatToLearn: string[];
+  requirements: string[];
   createdAt: Date;
   updatedAt: Date;
   tags: Schema.Types.ObjectId[];
@@ -43,7 +43,7 @@ const AcademySchema = new Schema<IAcademy>(
     reviewsCount: { type: Number, default: null },
     courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
     highlights: [{ type: String }],
-    whatToLearn: [{ type: String }],
+    requirements: [{ type: String }],
     tags: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
     userId: { type: Schema.Types.ObjectId, required: true },
   },

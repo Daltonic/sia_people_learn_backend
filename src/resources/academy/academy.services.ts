@@ -29,7 +29,7 @@ class AcademyService {
       validity,
       difficulty,
       highlights,
-      whatToLearn,
+      requirements,
       tags,
       courses,
     } = academyInput;
@@ -49,7 +49,7 @@ class AcademyService {
         imageUrl: imageUrl || null,
         validity: validity || 0,
         highlights: highlights || [],
-        whatToLearn: whatToLearn || [],
+        requirements: requirements || [],
         userId: userId,
       });
 
@@ -117,7 +117,7 @@ class AcademyService {
       price,
       difficulty,
       highlights,
-      whatToLearn,
+      requirements,
       tags,
       courses,
     } = academyInput;
@@ -185,7 +185,7 @@ class AcademyService {
           price: price || academy.price,
           difficulty: difficulty || academy.difficulty,
           highlights: highlights || academy.highlights,
-          whatToLearn: whatToLearn || academy.whatToLearn,
+          requirements: requirements || academy.requirements,
           duration: cumulativeDuration,
           courses: coursesFound,
           tags: tagDocumentIds,
@@ -233,20 +233,47 @@ class AcademyService {
   public async fetchAcademies(
     queryOptions: FetchAcademiesInterface
   ): Promise<object | Error> {
-    const {
-      page,
-      pageSize,
-      searchQuery,
-      filter,
-      difficulty,
-      approvedOnly,
-      rating,
-    } = queryOptions;
+    const { page, pageSize, searchQuery, filter, difficulty, approvedOnly } =
+      queryOptions;
     try {
-      // todo: Implement search and filter features
-      const query: FilterQuery<typeof this.userModel> = {};
+      // Filtering
+      // Design the filtering strategy
+      const query: FilterQuery<typeof this.academyModel> = {};
+      // Search for the searchQuery in the name, overview and description field
+      if (searchQuery) {
+        query.$or = [
+          { name: { $regex: new RegExp(searchQuery, "i") } },
+          { overview: { $regex: new RegExp(searchQuery, "i") } },
+          { description: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (difficulty) {
+        query.difficulty = difficulty;
+      }
+
+      if (approvedOnly === "true") {
+        query.approved = true;
+      }
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "recommended":
+          //todo: Decide on a recommendation algorithm
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
       const academies = await this.academyModel
-        .find({})
+        .find(query)
         .populate({
           path: "courses",
           model: this.courseModel,
@@ -263,8 +290,15 @@ class AcademyService {
           model: this.tagModel,
           select: "_id name",
           strictPopulate: false,
-        });
-      return academies;
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      // Find out if there is a next page
+      const totalAcademies = await this.academyModel.countDocuments(query);
+      const isNext = totalAcademies > skipAmount + academies.length;
+      return { academies, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Academies");
