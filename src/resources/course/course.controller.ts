@@ -6,6 +6,7 @@ import {
   CreateCourseInterface,
   DeleteCourseInterface,
   FetchCourseInterface,
+  FetchCoursesInterface,
   SubmitCourseInterface,
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
@@ -15,6 +16,7 @@ import {
   approveCourseSchema,
   createCourseSchema,
   deleteCourseSchema,
+  fetchCoursesSchema,
   submitCourseSchema,
   updateCourseSchema,
 } from "@/resources/course/course.validation";
@@ -59,7 +61,11 @@ class CourseController implements Controller {
       this.fetchCourse
     );
 
-    this.router.get(`${this.path}`, this.fetchCourses);
+    this.router.get(
+      `${this.path}`,
+      validateResource(fetchCoursesSchema),
+      this.fetchCourses
+    );
 
     this.router.put(
       `${this.path}/submit/:courseId`,
@@ -155,13 +161,14 @@ class CourseController implements Controller {
   };
 
   private fetchCourses = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchCoursesInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const queryOptions = req.query;
     try {
-      const courses = await this.courseService.fetchCourses();
-      res.status(StatusCodes.OK).json(courses);
+      const result = await this.courseService.fetchCourses(queryOptions);
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }

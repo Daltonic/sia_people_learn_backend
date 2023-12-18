@@ -4,6 +4,7 @@ import {
   createCourseSchema,
   deleteCourseSchema,
   fetchCourseSchema,
+  fetchCoursesSchema,
   submitCourseSchema,
   updateCourseSchema,
 } from "@/resources/course/course.validation";
@@ -16,3 +17,4 @@ export type SubmitCourseInterface = TypeOf<typeof submitCourseSchema>;
 export type ApproveCourseInterface = TypeOf<
   typeof approveCourseSchema
 >["params"];
+export type FetchCoursesInterface = TypeOf<typeof fetchCoursesSchema>["query"];

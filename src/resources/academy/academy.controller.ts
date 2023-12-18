@@ -146,8 +146,8 @@ class AcademyController implements Controller {
   ): Promise<Response | void> => {
     const queryOptions = req.query;
     try {
-      const courses = await this.academyService.fetchAcademies(queryOptions);
-      res.status(StatusCodes.OK).json(courses);
+      const result = await this.academyService.fetchAcademies(queryOptions);
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }

@@ -2,11 +2,13 @@ import User from "@/resources/user/user.model";
 import Course from "@/resources/course/course.model";
 import {
   CreateCourseInterface,
+  FetchCoursesInterface,
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
 import log from "@/utils/logger";
 import Tag from "@/resources/tag/tag.model";
 import Lesson from "@/resources/lesson/lesson.model";
+import { FilterQuery } from "mongoose";
 
 class CourseService {
   private userModel = User;
@@ -18,8 +20,17 @@ class CourseService {
     courseInput: CreateCourseInterface,
     userId: string
   ): Promise<object | Error> {
-    const { name, price, description, overview, difficulty, tags, imageUrl } =
-      courseInput;
+    const {
+      name,
+      price,
+      description,
+      overview,
+      difficulty,
+      tags,
+      imageUrl,
+      highlights,
+      requirements,
+    } = courseInput;
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -33,6 +44,8 @@ class CourseService {
         overview,
         difficulty,
         userId,
+        requirements,
+        highlights,
         imageUrl: imageUrl || null,
       });
 
@@ -77,51 +90,79 @@ class CourseService {
     courseId: string,
     userId: string
   ): Promise<object | Error> {
-    const { name, description, overview, price, imageUrl, difficulty, tags } =
-      updateCourseInput;
+    const {
+      name,
+      description,
+      overview,
+      price,
+      imageUrl,
+      difficulty,
+      tags,
+      highlights,
+      requirements,
+    } = updateCourseInput;
 
     try {
+      //Ensure that this is a valid user
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       const course = await this.courseModel.findById(courseId);
       if (!course) {
         throw new Error("Course not found");
       }
 
       // Only a course creator should be able to update the course
-      if (String(course.userId) !== userId) {
+      if (user.userType !== "admin" && String(course.userId) !== userId) {
         throw new Error("You are not allowed to updated this course");
       }
 
-      if (name) {
-        course.name = name;
-      }
-
-      if (description) {
-        course.description = description;
-      }
-
-      if (overview) {
-        course.overview = overview;
-      }
-
-      if (price) {
-        course.price = price;
-      }
-
-      if (imageUrl) {
-        course.imageUrl = imageUrl;
-      }
-
-      if (difficulty) {
-        course.difficulty = difficulty;
-      }
-
+      // Check if the tags Document exist, otherwise, create new tags
+      const tagDocumentIds: string[] = [];
       if (tags) {
-        course.tags = tags;
+        for (const tag of tags) {
+          const existingTag = await this.tagModel.findOne({
+            name: { $regex: new RegExp(`${tag}$`, "i") },
+          });
+
+          // If the tag already exists and the current course has been assigned the tag, then do nothing
+          if (existingTag && existingTag.courses.includes(course._id)) {
+            tagDocumentIds.push(existingTag._id);
+            continue;
+          }
+
+          // Otherwise, create the tag.
+          const _tag = await this.tagModel.findOneAndUpdate(
+            { name: { $regex: new RegExp(`^${tag}$`, "i") } },
+            {
+              $setOnInsert: { name: tag.toUpperCase() },
+              $push: { courses: course._id },
+            },
+            { upsert: true, new: true }
+          );
+          tagDocumentIds.push(_tag._id);
+        }
       }
 
-      // Now save the updated course
-      const updatedCourse = await course.save();
-      return updatedCourse;
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
+        courseId,
+        {
+          name: name || course.name,
+          description: description || course.description,
+          overview: overview || course.overview,
+          price: price || course.price,
+          imageUrl: imageUrl || course.imageUrl,
+          difficulty: difficulty || course.difficulty,
+          highlights: highlights || course.highlights,
+          requirements: requirements || course.requirements,
+          tags: tagDocumentIds,
+        },
+        { new: true }
+      );
+
+      return updatedCourse!;
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message);
@@ -190,10 +231,49 @@ class CourseService {
     }
   }
 
-  public async fetchCourses(): Promise<object | Error> {
+  public async fetchCourses(
+    queryOptions: FetchCoursesInterface
+  ): Promise<object | Error> {
+    const { page, pageSize, searchQuery, filter, difficulty, approvedOnly } =
+      queryOptions;
     try {
-      //todo: Implement search and filter features
-      const courses = this.courseModel
+      // Filtering
+      // Design the filtering strategy
+      const query: FilterQuery<typeof this.courseModel> = {};
+      // Search for the searchQuery in the name, overview and description field
+      if (searchQuery) {
+        query.$or = [
+          { name: { $regex: new RegExp(searchQuery, "i") } },
+          { overview: { $regex: new RegExp(searchQuery, "i") } },
+          { description: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (difficulty) {
+        query.difficulty = difficulty;
+      }
+
+      if (approvedOnly === "true") {
+        query.approved = true;
+      }
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "recommended":
+          //todo: Decide on a recommendation algorithm
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const courses = await this.courseModel
         .find({})
         .populate({
           path: "lessons",
@@ -209,8 +289,15 @@ class CourseService {
           path: "tags",
           model: this.tagModel,
           select: "_id name",
-        });
-      return courses;
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      // Find out if there is a next page
+      const totalCourses = await this.courseModel.countDocuments(query);
+      const isNext = totalCourses > skipAmount + courses.length;
+      return { courses, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error fetching Courses");

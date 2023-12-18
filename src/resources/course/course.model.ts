@@ -15,6 +15,8 @@ export interface ICourse extends Document {
   rating?: number;
   reviewsCount?: number | null;
   tags: string[];
+  requirements: string[];
+  highlights: string[];
   userId: Schema.Types.ObjectId;
   lessons?: Schema.Types.ObjectId[];
   createdAt: Date;
@@ -38,6 +40,8 @@ const CourseSchema = new Schema<ICourse>(
     imageUrl: { type: String },
     submitted: { type: Boolean, default: false },
     approved: { type: Boolean, default: false },
+    highlights: [{ type: String }],
+    requirements: [{ type: String }],
     rating: { type: Number },
     reviewsCount: { type: Number, default: null },
     tags: [{ type: String }],
