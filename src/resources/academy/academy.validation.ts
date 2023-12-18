@@ -60,3 +60,15 @@ export const approveAcademySchema = object({
     academyId: string(),
   }),
 });
+
+export const fetchAcademiesSchema = object({
+  query: object({
+    page: number().optional(),
+    pageSize: number().optional(),
+    searchQuery: string().optional(),
+    filter: z.enum(["newest", "recommended"]).default("newest"),
+    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
+    approvedOnly: z.enum(["true", "false"]).default("false"),
+    rating: number().min(1).max(5).optional(),
+  }),
+});

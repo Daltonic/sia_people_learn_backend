@@ -1,10 +1,11 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router, query } from "express";
 import AcademyService from "@/resources/academy/academy.services";
 import Controller from "@/utils/interfaces/controller.interface";
 import {
   ApproveAcademyInterface,
   CreateAcademyInterface,
   DeleteAcademyInterface,
+  FetchAcademiesInterface,
   FetchAcademyInterface,
   SubmitAcademyInterface,
   UpdateAcademyInterface,
@@ -16,6 +17,7 @@ import {
   approveAcademySchema,
   createAcademySchema,
   deleteAcademySchema,
+  fetchAcademiesSchema,
   fetchAcademySchema,
   submitAcademySchema,
   updateAcademySchema,
@@ -50,7 +52,11 @@ class AcademyController implements Controller {
       this.fetchAcademy
     );
 
-    this.router.get(`${this.path}`, loggedIn, this.fetchAcademies);
+    this.router.get(
+      `${this.path}`,
+      [loggedIn, validateResource(fetchAcademiesSchema)],
+      this.fetchAcademies
+    );
 
     this.router.put(
       `${this.path}/submit/:academyId`,
@@ -134,12 +140,13 @@ class AcademyController implements Controller {
   };
 
   private fetchAcademies = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchAcademiesInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const queryOptions = req.query;
     try {
-      const courses = await this.academyService.fetchAcademies();
+      const courses = await this.academyService.fetchAcademies(queryOptions);
       res.status(StatusCodes.OK).json(courses);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
