@@ -3,6 +3,7 @@ import {
   approveAcademySchema,
   createAcademySchema,
   deleteAcademySchema,
+  fetchAcademiesSchema,
   fetchAcademySchema,
   submitAcademySchema,
   updateAcademySchema,
@@ -20,3 +21,6 @@ export type SubmitAcademyInterface = TypeOf<
 export type ApproveAcademyInterface = TypeOf<
   typeof approveAcademySchema
 >["params"];
+export type FetchAcademiesInterface = TypeOf<
+  typeof fetchAcademiesSchema
+>["query"];

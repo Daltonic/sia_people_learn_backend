@@ -3,10 +3,12 @@ import Course from "@/resources/course/course.model";
 import Academy from "@/resources/academy/academy.model";
 import {
   CreateAcademyInterface,
+  FetchAcademiesInterface,
   UpdateAcademyInterface,
 } from "@/resources/academy/academy.interface";
 import { log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
+import { FilterQuery } from "mongoose";
 
 class AcademyService {
   private userModel = User;
@@ -228,9 +230,21 @@ class AcademyService {
     }
   }
 
-  public async fetchAcademies(): Promise<object | Error> {
+  public async fetchAcademies(
+    queryOptions: FetchAcademiesInterface
+  ): Promise<object | Error> {
+    const {
+      page,
+      pageSize,
+      searchQuery,
+      filter,
+      difficulty,
+      approvedOnly,
+      rating,
+    } = queryOptions;
     try {
       // todo: Implement search and filter features
+      const query: FilterQuery<typeof this.userModel> = {};
       const academies = await this.academyModel
         .find({})
         .populate({
