@@ -5,6 +5,7 @@ import {
   CreateLessonInterface,
   DeleteLessonInterface,
   FetchLessonInterface,
+  FetchLessonsInterface,
   UpdateLessonInterface,
 } from "@/resources/lesson/lesson.interface";
 import HttpException from "@/utils/exceptions/HttpException";
@@ -13,6 +14,7 @@ import {
   createLessonSchema,
   deleteLessonSchema,
   fetchLessonSchema,
+  fetchLessonsSchema,
   updateLessonSchema,
 } from "@/resources/lesson/lesson.validation";
 import {
@@ -55,7 +57,11 @@ class LessonController implements Controller {
       this.fetchLesson
     );
 
-    this.router.get(`${this.path}`, loggedIn, this.fetchLessons);
+    this.router.get(
+      `${this.path}`,
+      [loggedIn, validateResource(fetchLessonsSchema)],
+      this.fetchLessons
+    );
   }
 
   private createLesson = async (
@@ -142,12 +148,13 @@ class LessonController implements Controller {
   };
 
   private fetchLessons = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchLessonsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const { courseId } = req.query;
     try {
-      const lessons = await this.lessonService.fetchLessons();
+      const lessons = await this.lessonService.fetchLessons(courseId);
       res.status(StatusCodes.OK).json(lessons);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

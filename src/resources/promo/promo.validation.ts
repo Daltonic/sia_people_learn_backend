@@ -2,7 +2,10 @@ import { number, object, string, z } from "zod";
 
 export const createPromoSchema = object({
   body: object({
-    percentage: number().min(0),
+    code: string({ required_error: "Promo code is required" }),
+    percentage: number({ required_error: "Percentage must be a number" }).min(
+      0
+    ),
     promoType: z.enum(["SiteWidePromo", "InstructorPromo", "ManualSalesPromo"]),
   }).refine(
     (data) =>

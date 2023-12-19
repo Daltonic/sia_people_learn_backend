@@ -15,7 +15,11 @@ const validateResource =
       });
       next();
     } catch (e: any) {
-      res.status(StatusCodes.BAD_REQUEST).send(e);
+      let message: string[] = [];
+      if (e.name === "ZodError") {
+        e.issues.forEach((issue: any) => message.push(issue.message));
+      }
+      res.status(StatusCodes.BAD_REQUEST).send(message.join(", "));
     }
   };
 

@@ -13,7 +13,7 @@ export interface IPromo extends Document {
 
 const PromoSchema = new Schema<IPromo>(
   {
-    code: { type: String, default: generateAlphanumeric(10) },
+    code: { type: String, required: true, unique: true },
     percentage: { type: Number, required: true },
     promoType: {
       type: String,

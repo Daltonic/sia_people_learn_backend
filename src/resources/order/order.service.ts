@@ -1,9 +1,12 @@
 import Promo from "@/resources/promo/promo.model";
 import User from "@/resources/user/user.model";
-import { CreateOrderInterface } from "@/resources/order/order.interface";
+import {
+  CreateOrderInterface,
+  FetchOrdersInterface,
+} from "@/resources/order/order.interface";
 import Order from "@/resources/order/order.model";
 import log from "@/utils/logger";
-import { Schema } from "mongoose";
+import { FilterQuery, Schema } from "mongoose";
 
 class OrderService {
   private userModel = User;
@@ -101,11 +104,44 @@ class OrderService {
     }
   }
 
-  public async fetchOrders(): Promise<object | Error> {
+  public async fetchOrders(
+    queryOptions: FetchOrdersInterface,
+    userId: string
+  ): Promise<object | Error> {
+    const { page, pageSize, hasPromoCode, paymentType } = queryOptions;
     try {
-      //todo: filtering and searches
+      const query: FilterQuery<typeof this.orderModel> = {};
+      // Find out who the current user to determine whether to display all others or just the user's orders
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      if (user.userType !== "admin") {
+        query.userId = userId;
+      }
+
+      if (paymentType) {
+        query.paymentType = paymentType;
+      }
+
+      if (hasPromoCode && hasPromoCode === "true") {
+        query.promoId = { $ne: null };
+      }
+
+      if (hasPromoCode && hasPromoCode === "false") {
+        query.promoId = { $eq: null };
+      }
+
+      console.log(query);
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
       const orders = await this.orderModel
-        .find({})
+        .find(query)
         .populate({
           path: "userId",
           model: this.userModel,
@@ -115,9 +151,15 @@ class OrderService {
           path: "promoId",
           model: this.promoModel,
           select: "code percentage promoType",
-        });
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort({ createdAt: -1 });
 
-      return orders;
+      // Find out if there is a next page
+      const totalOrders = await this.orderModel.countDocuments(query);
+      const isNext = totalOrders > skipAmount + orders.length;
+      return { orders, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching orders");

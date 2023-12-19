@@ -1,11 +1,12 @@
 import User from "@/resources/user/user.model";
 import {
   CreatePostInterface,
+  FetchPostsInterface,
   UpdatePostInterface,
 } from "@/resources/post/post.interface";
 import Post, { IPost } from "@/resources/post/post.model";
 import log from "@/utils/logger";
-import { Schema } from "mongoose";
+import { FilterQuery, Schema } from "mongoose";
 
 class PostService {
   private postModel = Post;
@@ -179,13 +180,58 @@ class PostService {
   }
 
   public async fetchPosts(
-    parentsOnly: boolean,
-    publishedOnly: boolean
+    queryOptions: FetchPostsInterface,
+    userId: string
   ): Promise<object | Error> {
+    const { searchQuery, filter, page, pageSize, parentsOnly } = queryOptions;
     try {
-      // todo: pagination, sorting, filter
+      // Design a filtering stratefy
+      const query: FilterQuery<typeof this.postModel> = {};
+      if (searchQuery) {
+        query.$or = [
+          { name: { $regex: new RegExp(searchQuery, "i") } },
+          { overview: { $regex: new RegExp(searchQuery, "i") } },
+          { description: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (parentsOnly) {
+        query.parentId = null;
+      }
+
+      // Fetch current user and determine if the user is an admin.
+      // If the user is not an admin, then display only approved courses
+      if (!userId) {
+        query.published = true;
+      } else {
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        if (user.userType !== "admin") {
+          query.published = true;
+        }
+      }
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "recommended":
+          //todo: Decide on a recommendation algorithm
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
       const posts = await this.postModel
-        .find({ published: publishedOnly })
+        .find(query)
         .populate({
           path: "userId",
           model: this.userModel,
@@ -195,8 +241,14 @@ class PostService {
           path: "comments",
           model: this.postModel,
           select: "_id name description overview",
-        });
-      return posts;
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      const totalCourses = await this.postModel.countDocuments(query);
+      const isNext = totalCourses > skipAmount + posts.length;
+      return { posts, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Posts");

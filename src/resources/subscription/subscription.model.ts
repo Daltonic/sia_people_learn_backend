@@ -28,7 +28,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
     enum: ["Month", "Year"],
     required: true,
   },
-  orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
+  orderId: { type: Schema.Types.ObjectId, ref: "Order" },
   amount: { type: Number, required: true },
   currentCourse: { type: Schema.Types.ObjectId, ref: "Course" },
   currentLesson: { type: Schema.Types.ObjectId, ref: "Lesson" },

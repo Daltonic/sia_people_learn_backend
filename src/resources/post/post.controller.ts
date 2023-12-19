@@ -16,6 +16,7 @@ import {
   createPostSchema,
   deletePostSchema,
   fetchPostSchema,
+  fetchPostsSchema,
   publishPostSchema,
   updatePostSchema,
 } from "@/resources/post/post.validation";
@@ -56,7 +57,11 @@ class PostController implements Controller {
 
     this.router.get(`${this.path}/user/posts`, [loggedIn], this.fetchUserPosts);
 
-    this.router.get(`${this.path}`, [loggedIn], this.fetchPosts);
+    this.router.get(
+      `${this.path}`,
+      validateResource(fetchPostsSchema),
+      this.fetchPosts
+    );
 
     this.router.delete(
       `${this.path}/:postId`,
@@ -155,12 +160,10 @@ class PostController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
-    const { parentsOnly, publishedOnly } = req.query;
+    const queryOptions = req.query;
+    const userId = res.locals?.user?._id;
     try {
-      const posts = await this.postService.fetchPosts(
-        parentsOnly === "true",
-        publishedOnly === "true"
-      );
+      const posts = await this.postService.fetchPosts(queryOptions, userId);
       res.status(StatusCodes.OK).json(posts);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

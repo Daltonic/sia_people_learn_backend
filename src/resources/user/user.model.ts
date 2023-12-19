@@ -18,7 +18,10 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   lastLogin?: Date;
-  courses?: Schema.Types.ObjectId[];
+  courses: Schema.Types.ObjectId[];
+  academies: Schema.Types.ObjectId[];
+  reviewedCourses: Schema.Types.ObjectId[];
+  reviewedAcademies: Schema.Types.ObjectId[];
   validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -38,6 +41,9 @@ const UserSchema = new Schema<IUser>(
     verificationCode: { type: String, default: () => nanoid() },
     verified: { type: Boolean, default: false },
     courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
+    academies: [{ type: Schema.Types.ObjectId, ref: "Academy" }],
+    reviewedCourses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
+    reviewedAcademies: [{ type: Schema.Types.ObjectId, ref: "Academy" }],
     recoveryCode: { type: String },
     rememberMe: { type: Boolean, default: false },
     lastLogin: { type: Date },

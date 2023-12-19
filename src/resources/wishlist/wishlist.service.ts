@@ -18,12 +18,6 @@ class WishlistService {
     const { productId, productType } = wishlistInput;
 
     try {
-      // Verify user
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new Error("User not found");
-      }
-
       // Ensure that the product exists
       switch (productType) {
         case "Academy":
@@ -65,16 +59,7 @@ class WishlistService {
         throw new Error("Wishlist does not exist");
       }
 
-      // verify that that current user is either the owner of the wishlist or an admin
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new Error("User does not exist");
-      }
-
-      if (
-        String(user._id) !== String(wishlist.userId) &&
-        user.userType !== "admin"
-      ) {
+      if (userId !== String(wishlist.userId)) {
         throw new Error("You are not authorised to delete this wishlist");
       }
 
@@ -87,11 +72,11 @@ class WishlistService {
     }
   }
 
-  public async fetchWishlists(): Promise<object | Error> {
+  public async fetchWishlists(userId: string): Promise<object | Error> {
     try {
       //todo: Filtering and search, populate the product
       const wishlists = await this.wishlistModel
-        .find({})
+        .find({ userId })
         .populate({
           path: "userId",
           model: this.userModel,

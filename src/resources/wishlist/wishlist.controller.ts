@@ -80,8 +80,9 @@ class WishlistController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const { _id: userId } = res.locals.user;
     try {
-      const wishlists = await this.wishlistService.fetchWishlists();
+      const wishlists = await this.wishlistService.fetchWishlists(userId);
       res.status(StatusCodes.OK).json(wishlists);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

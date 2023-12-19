@@ -20,3 +20,16 @@ export const approveReviewSchema = object({
     reviewId: string(),
   }),
 });
+
+export const fetchReviewsSchema = object({
+  query: object({
+    productId: string({ required_error: "Product Id is required" }),
+    productType: z.enum(["Course", "Academy"], {
+      required_error: "Product Type is required",
+    }),
+    approved: z.enum(["true", "false"]).optional(),
+    page: string().optional(),
+    pageSize: string().optional(),
+    filter: z.enum(["oldest", "newest"]).optional(),
+  }),
+});

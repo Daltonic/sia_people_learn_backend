@@ -231,12 +231,11 @@ class AcademyService {
   }
 
   public async fetchAcademies(
-    queryOptions: FetchAcademiesInterface
+    queryOptions: FetchAcademiesInterface,
+    userId: string
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, difficulty, approvedOnly } =
-      queryOptions;
+    const { page, pageSize, searchQuery, filter, difficulty } = queryOptions;
     try {
-      // Filtering
       // Design the filtering strategy
       const query: FilterQuery<typeof this.academyModel> = {};
       // Search for the searchQuery in the name, overview and description field
@@ -252,8 +251,19 @@ class AcademyService {
         query.difficulty = difficulty;
       }
 
-      if (approvedOnly === "true") {
+      // Fetch current user and determine if the user is an admin.
+      // If the user is not an admin, then display only approved courses
+      if (!userId) {
         query.approved = true;
+      } else {
+        const user = await this.userModel.findById(userId);
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+        if (user.userType !== "admin") {
+          query.approved = true;
+        }
       }
 
       // Define the sorting strategy
