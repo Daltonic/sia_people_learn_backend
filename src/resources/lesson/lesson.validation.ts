@@ -23,6 +23,7 @@ export const updateLessonSchema = object({
     imageUrl: string().optional(),
     videoUrl: string().optional(),
     downloadableUrl: string().optional(),
+    order: number().optional(),
   }),
   params: object({
     lessonId: string(),
@@ -38,5 +39,11 @@ export const deleteLessonSchema = object({
 export const fetchLessonSchema = object({
   params: object({
     lessonId: string(),
+  }),
+});
+
+export const fetchLessonsSchema = object({
+  query: object({
+    courseId: string({ required_error: "CourseId is required" }),
   }),
 });

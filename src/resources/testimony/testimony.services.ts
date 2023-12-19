@@ -71,7 +71,6 @@ class TestimonyService {
         {
           statement: statement || testimony.statement,
           profession: profession || testimony.profession,
-          approved: user.userType === "admin" ? true : false,
         },
         { new: true }
       );
@@ -127,6 +126,11 @@ class TestimonyService {
       // Ascertain that this is the admin or the testimony creator
       if (user.userType !== "admin" && String(testimony.userId) !== userId) {
         throw new Error("You are not permitted to delete this Testimony");
+      }
+
+      // If the testimony is already approved, then only the admin should be able to delete
+      if (testimony.approved && user.userType !== "admin") {
+        throw new Error("Only an admin can delete an approved testimony");
       }
 
       // Now delete the Testimony

@@ -48,13 +48,13 @@ class AcademyController implements Controller {
 
     this.router.get(
       `${this.path}/:academyId`,
-      [loggedIn, validateResource(fetchAcademySchema)],
+      validateResource(fetchAcademySchema),
       this.fetchAcademy
     );
 
     this.router.get(
       `${this.path}`,
-      [loggedIn, validateResource(fetchAcademiesSchema)],
+      [validateResource(fetchAcademiesSchema)],
       this.fetchAcademies
     );
 
@@ -145,8 +145,12 @@ class AcademyController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     const queryOptions = req.query;
+    const userId = res.locals?.user?._id;
     try {
-      const result = await this.academyService.fetchAcademies(queryOptions);
+      const result = await this.academyService.fetchAcademies(
+        queryOptions,
+        userId
+      );
       res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

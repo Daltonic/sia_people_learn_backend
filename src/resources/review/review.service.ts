@@ -1,10 +1,13 @@
-import { CreateReviewInterface } from "@/resources/review/review.interface";
+import {
+  CreateReviewInterface,
+  FetchReviewsInterface,
+} from "@/resources/review/review.interface";
 import log from "@/utils/logger";
 import User from "@/resources/user/user.model";
 import Course from "@/resources/course/course.model";
 import Academy from "@/resources/academy/academy.model";
 import Review from "@/resources/review/review.model";
-import { Schema } from "mongoose";
+import { FilterQuery, Schema } from "mongoose";
 
 class ReviewService {
   private userModel = User;
@@ -31,11 +34,27 @@ class ReviewService {
           if (!academy) {
             throw new Error("Academy not found");
           }
+          if (!user.academies.includes(academy._id)) {
+            throw new Error("User not subscribed to this Academy");
+          }
+          // If the user has already reviewed this academy, then return
+          if (user.reviewedAcademies.includes(academy._id)) {
+            throw new Error("User already reviewed this Academy");
+          }
           break;
         case "Course":
           const course = await this.courseModel.findById(productId);
           if (!course) {
             throw new Error("Course not found");
+          }
+
+          if (!user.courses?.includes(course._id)) {
+            throw new Error("User not subscribed to this Course");
+          }
+
+          // If the user has already reviewed this course, then return
+          if (user.reviewedCourses.includes(course._id)) {
+            throw new Error("User already reviewed this Course");
           }
           break;
       }
@@ -49,6 +68,19 @@ class ReviewService {
         productModelType: productType,
       });
 
+      // Save the product in the user's reviewedAcademy or reviewedCourse collection
+      if (productType === "Academy") {
+        await this.userModel.findByIdAndUpdate(
+          userId,
+          { $push: { reviewedAcademies: productId } },
+          { new: true }
+        );
+      } else {
+        await this.userModel.findByIdAndUpdate(userId, {
+          $push: { reviewedCourses: productId },
+        });
+      }
+
       return review;
     } catch (e: any) {
       log.error(e.message);
@@ -61,21 +93,35 @@ class ReviewService {
     userId: string
   ): Promise<string | Error> {
     try {
-      // Ensure that the user exists
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new Error("User not found");
-      }
-
       // Ensure that the review exists
       const review = await this.reviewModel.findById(reviewId);
       if (!review) {
         throw new Error("Review not found");
       }
 
-      // Only admin or the user that created the review should delete this review
-      if (user.userType !== "admin" && String(review.userId) !== userId) {
-        throw new Error("You are not permitted to delete this Review");
+      // Fetch the course or academy. That way we can ensure that current use is the course/academy instructor
+      if (review.productType === "Academy") {
+        const academy = await this.academyModel.findById(review.productId);
+        if (!academy) {
+          throw new Error("Academy not found");
+        }
+
+        if (userId !== String(academy.userId)) {
+          throw new Error(
+            "Only the academy instructor can delete reviews for this academy"
+          );
+        }
+      } else {
+        const course = await this.courseModel.findById(review.productId);
+        if (!course) {
+          throw new Error("Course not found");
+        }
+
+        if (userId !== String(course.userId)) {
+          throw new Error(
+            "Only the course instructor can delete reviews for this course"
+          );
+        }
       }
 
       // Now the review can be deleted
@@ -96,10 +142,43 @@ class ReviewService {
     }
   }
 
-  public async fetchReviews(): Promise<object | Error> {
+  public async fetchReviews(
+    queryOptions: FetchReviewsInterface
+  ): Promise<object | Error> {
+    const { productId, productType, approved, page, pageSize, filter } =
+      queryOptions;
     try {
+      const query: FilterQuery<typeof this.reviewModel> = {};
+
+      // Add the productId and product type to the query
+      query.productId = productId;
+      query.productType = productType;
+
+      // If the user specifies the approved field, then add that query
+      if (approved) {
+        query.approved = approved === "true";
+      }
+
+      // Sorting stratagy
+      let sortingOptions = {};
+      switch (filter) {
+        case "newest":
+          sortingOptions = { createdAt: -1 };
+          break;
+        case "oldest":
+          sortingOptions = { createdAt: 1 };
+          break;
+        default:
+          sortingOptions = { createdAt: -1 };
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
       const reviews = await this.reviewModel
-        .find({})
+        .find(query)
         .populate({
           path: "userId",
           model: this.userModel,
@@ -108,9 +187,15 @@ class ReviewService {
         .populate({
           path: "productId",
           select: "_id name difficulty overview description",
-        });
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortingOptions);
 
-      return reviews;
+      // Find out if there is a next page
+      const totalReviews = await this.reviewModel.countDocuments(query);
+      const isNext = totalReviews > skipAmount + reviews.length;
+      return { reviews, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching reviews");
@@ -134,7 +219,10 @@ class ReviewService {
     }
   }
 
-  public async approveReview(reviewId: string): Promise<string | Error> {
+  public async approveReview(
+    reviewId: string,
+    userId: string
+  ): Promise<string | Error> {
     try {
       // Ensure that the review exists
       const review = await this.reviewModel.findById(reviewId);
@@ -144,6 +232,31 @@ class ReviewService {
 
       if (review.approved) {
         return "Review already approved";
+      }
+
+      // Get the productId and productType from the review so that we can check if the currentUser is the instructor
+      if (review.productType === "Academy") {
+        const academy = await this.academyModel.findById(review.productId);
+        if (!academy) {
+          throw new Error("Academy not found");
+        }
+
+        if (userId !== String(academy.userId)) {
+          throw new Error(
+            "Only the academy instructor can approve reviews for this academy"
+          );
+        }
+      } else {
+        const course = await this.courseModel.findById(review.productId);
+        if (!course) {
+          throw new Error("Course not found");
+        }
+
+        if (userId !== String(course.userId)) {
+          throw new Error(
+            "Only the course instructor can approve reviews for this course"
+          );
+        }
       }
 
       // Now approve the review

@@ -15,3 +15,12 @@ export const fetchOrderSchema = object({
     orderId: string(),
   }),
 });
+
+export const fetchOrdersSchema = object({
+  query: object({
+    page: string().optional(),
+    pageSize: string().optional(),
+    paymentType: z.enum(["Stripe", "Crypto"]).optional(),
+    hasPromoCode: z.enum(["true", "false"]).optional(),
+  }),
+});

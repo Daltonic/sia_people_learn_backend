@@ -4,15 +4,22 @@ import {
   ApproveReviewInterface,
   CreateReviewInterface,
   DeleteReviewInterface,
+  FetchReviewsInterface,
 } from "@/resources/review/review.interface";
 import Controller from "@/utils/interfaces/controller.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
-import { isAdmin, loggedIn, validateResource } from "@/middlewares/index";
+import {
+  isAdmin,
+  isAdminOrInstructor,
+  loggedIn,
+  validateResource,
+} from "@/middlewares/index";
 import {
   approveReviewSchema,
   createReviewSchema,
   deleteReviewSchema,
+  fetchReviewsSchema,
 } from "@/resources/review/review.validation";
 
 class ReviewController implements Controller {
@@ -31,13 +38,17 @@ class ReviewController implements Controller {
       this.createReview
     );
 
-    this.router.get(`${this.path}`, isAdmin, this.fetchReviews);
+    this.router.get(
+      `${this.path}`,
+      [isAdminOrInstructor, validateResource(fetchReviewsSchema)],
+      this.fetchReviews
+    );
 
     this.router.get(`${this.path}/user`, loggedIn, this.fetchUserReviews);
 
     this.router.put(
       `${this.path}/approve/:reviewId`,
-      [isAdmin, validateResource(approveReviewSchema)],
+      [isAdminOrInstructor, validateResource(approveReviewSchema)],
       this.approveReview
     );
 
@@ -65,12 +76,13 @@ class ReviewController implements Controller {
   };
 
   private fetchReviews = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchReviewsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const queryOptions = req.query;
     try {
-      const reviews = await this.reviewService.fetchReviews();
+      const reviews = await this.reviewService.fetchReviews(queryOptions);
       res.status(StatusCodes.OK).json(reviews);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
@@ -97,8 +109,9 @@ class ReviewController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     const { reviewId } = req.params;
+    const { _id: userId } = res.locals.user;
     try {
-      const message = await this.reviewService.approveReview(reviewId);
+      const message = await this.reviewService.approveReview(reviewId, userId);
       res.status(StatusCodes.OK).send(message);
     } catch (e: any) {
       next(new HttpException(StatusCodes.OK, e.message));

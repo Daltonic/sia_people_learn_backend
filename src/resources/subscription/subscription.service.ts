@@ -1,6 +1,6 @@
 import Academy from "@/resources/academy/academy.model";
 import Course from "@/resources/course/course.model";
-import Order from "@/resources/order/order.model";
+import Order, { IOrder } from "@/resources/order/order.model";
 import User from "@/resources/user/user.model";
 import Subscription from "@/resources/subscription/subscription.model";
 import { CreateSubscriptionInterface } from "@/resources/subscription/subscription.interface";
@@ -31,12 +31,14 @@ class SubscriptionService {
         throw new Error("User not found");
       }
 
-      // Ensure that the order exists
-      const order = await this.orderModel.findById(orderId);
-      if (!order) {
-        throw new Error("Order not found");
+      // If orderId is provided, then ensure that the order exists
+      let order: IOrder | null = null;
+      if (orderId) {
+        order = await this.orderModel.findById(orderId);
+        if (!order) {
+          throw new Error("Order not found");
+        }
       }
-
       let expiresAt: Date;
 
       if (paymentFrequencyType === "Month") {
@@ -67,15 +69,28 @@ class SubscriptionService {
 
       const subscription = await this.subscriptionModel.create({
         userId,
-        orderId,
+        orderId: orderId || null,
         paymentFrequency,
         paymentFrequencyType,
         productType,
         productId,
         expiresAt,
-        amount: order.grandTotal,
+        amount: order ? order.grandTotal : 0,
         productModelType: productType,
       });
+
+      // Save the product in the user's academy or course collection
+      if (productType === "Academy") {
+        await this.userModel.findByIdAndUpdate(
+          userId,
+          { $push: { academies: productId } },
+          { new: true }
+        );
+      } else {
+        await this.userModel.findByIdAndUpdate(userId, {
+          $push: { courses: productId },
+        });
+      }
 
       return subscription;
     } catch (e: any) {

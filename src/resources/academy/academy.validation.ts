@@ -68,6 +68,5 @@ export const fetchAcademiesSchema = object({
     searchQuery: string().optional(),
     filter: z.enum(["newest", "recommended"]).default("newest"),
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
-    approvedOnly: z.enum(["true", "false"]).default("false"),
   }),
 });

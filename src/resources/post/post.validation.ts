@@ -31,7 +31,10 @@ export const fetchPostSchema = object({
 export const fetchPostsSchema = object({
   query: object({
     parentsOnly: z.enum(["true", "false"]).optional(),
-    publishedOnly: z.enum(["true", "false"]).optional(),
+    page: string().optional(),
+    pageSize: string().optional(),
+    searchQuery: string().optional(),
+    filter: z.enum(["newest", "recommended"]).default("newest"),
   }),
 });
 

@@ -41,11 +41,6 @@ class LessonService {
         );
       }
 
-      // If no order is provided, assign a default order using the number of lessons that has been assigned to the course
-      if (!order) {
-        order = course.lessons ? course.lessons?.length + 1 : 1;
-      }
-
       // Create the lesson
       const lesson = await this.lessonModel.create({
         courseId: courseId,
@@ -56,7 +51,7 @@ class LessonService {
         imageUrl: imageUrl || null,
         videoUrl: videoUrl || null,
         downloadableUrl: downloadableUrl || null,
-        order: order,
+        order: order || 0,
       });
 
       // Update course model to capture this lesson
@@ -91,6 +86,7 @@ class LessonService {
       imageUrl,
       videoUrl,
       downloadableUrl,
+      order,
     } = lessonInput;
     try {
       // Fetch the lesson
@@ -107,7 +103,9 @@ class LessonService {
 
       // Confirm that the current user is the course creator
       if (String(course.userId) !== userId) {
-        throw new Error("You are not authorised to update this lesson");
+        throw new Error(
+          "You must be the course instructor for this lesson to update the lesson"
+        );
       }
 
       // If duration is available, update the course duration to reflect the current time
@@ -130,6 +128,7 @@ class LessonService {
           imageUrl: imageUrl || lesson.imageUrl,
           videoUrl: videoUrl || lesson.videoUrl,
           downloadableUrl: downloadableUrl || lesson.downloadableUrl,
+          order: order || lesson.order,
         },
         { new: true }
       );
@@ -195,10 +194,10 @@ class LessonService {
     }
   }
 
-  public async fetchLessons(): Promise<object | Error> {
+  public async fetchLessons(courseId: string): Promise<object | Error> {
     try {
       // todo: Filtering and sorting features
-      const lessons = await this.lessonModel.find();
+      const lessons = await this.lessonModel.find({ courseId });
 
       return lessons;
     } catch (e: any) {

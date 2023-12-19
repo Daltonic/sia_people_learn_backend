@@ -11,7 +11,7 @@ class PromoService {
     promoInput: CreatePromoInterface,
     userId: string
   ): Promise<object | Error> {
-    const { percentage, promoType } = promoInput;
+    const { percentage, promoType, code } = promoInput;
 
     try {
       // Ensure that the user exists and that he has the permission to create this promo
@@ -31,6 +31,7 @@ class PromoService {
         percentage,
         promoType,
         userId,
+        code,
         validated: ["ManualSalesPromo", "SiteWidePromo"].includes(promoType),
       });
 

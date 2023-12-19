@@ -4,6 +4,7 @@ import OrderService from "@/resources/order/order.service";
 import {
   CreateOrderInterface,
   FetchOrderInterface,
+  FetchOrdersInterface,
 } from "@/resources/order/order.interface";
 import { StatusCodes } from "http-status-codes";
 import HttpException from "@/utils/exceptions/HttpException";
@@ -35,7 +36,7 @@ class OrderController implements Controller {
       this.fetchOrder
     );
 
-    this.router.get(`${this.path}`, isAdmin, this.fetchOrders);
+    this.router.get(`${this.path}`, loggedIn, this.fetchOrders);
   }
 
   private createOrder = async (
@@ -70,13 +71,15 @@ class OrderController implements Controller {
   };
 
   private fetchOrders = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchOrdersInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const { _id: userId } = res.locals.user;
+    const queryOptions = req.query;
     try {
-      const orders = await this.orderService.fetchOrders();
-      res.status(StatusCodes.OK).json(orders);
+      const result = await this.orderService.fetchOrders(queryOptions, userId);
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
