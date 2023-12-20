@@ -2,9 +2,11 @@ import User from "@/resources/user/user.model";
 import Testimony from "@/resources/testimony/testimony.model";
 import {
   CreateTestimonyInterface,
+  FetchTestimoniesInterface,
   UpdateTestimonyInterface,
 } from "@/resources/testimony/testimony.interface";
 import log from "@/utils/logger";
+import { FilterQuery } from "mongoose";
 
 class TestimonyService {
   private userModel = User;
@@ -164,10 +166,73 @@ class TestimonyService {
     }
   }
 
-  public async fetchTestimonies(): Promise<object | Error> {
+  public async fetchTestimonies(
+    queryOptions: FetchTestimoniesInterface,
+    userId: string
+  ): Promise<object | Error> {
+    const { searchQuery, filter, page, pageSize, approved } = queryOptions;
     try {
-      const testimonies = await this.testimonyModel.find({});
-      return testimonies;
+      // Design the filtering strategy
+      const query: FilterQuery<typeof this.testimonyModel> = {};
+      // Search for the provided searchQuery in the statement and profession fields
+      if (searchQuery) {
+        query.$or = [
+          { statement: { $regex: new RegExp(searchQuery, "i") } },
+          { profession: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      // Only admins should have the option of querying unapproved Testimony
+      if (userId) {
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        if (user.userType !== "admin") {
+          query.approved = true;
+        } else {
+          if (approved) {
+            query.approved = approved === "true";
+          }
+        }
+      }
+
+      // Define the sorting strategy
+      let sortingOptions = {};
+      switch (filter) {
+        case "newest":
+          sortingOptions = { createdAt: -1 };
+          break;
+        case "oldest":
+          sortingOptions = { createdAt: 1 };
+          break;
+        default:
+          sortingOptions = { createdAt: -1 };
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const testimonies = await this.testimonyModel
+        .find(query)
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id username firstName lastName",
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortingOptions);
+
+      // Find out if there is a next page
+      const totalTestimonies = await this.testimonyModel.countDocuments(query);
+      const isNext = totalTestimonies > skipAmount + testimonies.length;
+
+      return { testimonies, isNext };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Testimonies");

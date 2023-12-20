@@ -5,6 +5,7 @@ import {
   ApproveTestimonyInterface,
   CreateTestimonyInterface,
   DeleteTestimonyInterface,
+  FetchTestimoniesInterface,
   UpdateTestimonyInterface,
 } from "@/resources/testimony/testimony.interface";
 import HttpException from "@/utils/exceptions/HttpException";
@@ -14,6 +15,7 @@ import {
   approveTestimonySchema,
   createTestimonySchema,
   deleteTestimonySchema,
+  fetchTestimoniesSchema,
   updateTestimonySchema,
 } from "@/resources/testimony/testimony.validation";
 
@@ -51,7 +53,11 @@ class TestimonyController implements Controller {
       this.deleteTestimony
     );
 
-    this.router.get(`${this.path}`, isAdmin, this.fetchTestimonies);
+    this.router.get(
+      `${this.path}`,
+      [validateResource(fetchTestimoniesSchema)],
+      this.fetchTestimonies
+    );
 
     this.router.get(`${this.path}/user`, loggedIn, this.fetchUserTestimonies);
   }
@@ -157,13 +163,19 @@ class TestimonyController implements Controller {
   };
 
   private fetchTestimonies = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchTestimoniesInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const userId = res.locals?.user;
+    const queryOptions = req.query;
+
     try {
-      const testimonies = await this.testimonyService.fetchTestimonies();
-      res.status(StatusCodes.OK).json(testimonies);
+      const result = await this.testimonyService.fetchTestimonies(
+        queryOptions,
+        userId
+      );
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.OK, e.message));
     }

@@ -117,23 +117,25 @@ class OrderService {
         throw new Error("User not found");
       }
 
+      // If current user is not an admin, then display only the current user's orders
       if (user.userType !== "admin") {
         query.userId = userId;
       }
 
+      // If the user specifies a payment type, then query by that payment type
       if (paymentType) {
         query.paymentType = paymentType;
       }
 
+      // If the user specifies to fetch only orders with promocode, then return orders whose promoId is not null
       if (hasPromoCode && hasPromoCode === "true") {
         query.promoId = { $ne: null };
       }
 
+      // If the user specifies to fetch only orders without promoCode, then return orders where promoId is null
       if (hasPromoCode && hasPromoCode === "false") {
         query.promoId = { $eq: null };
       }
-
-      console.log(query);
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1

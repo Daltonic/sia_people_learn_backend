@@ -21,12 +21,12 @@ export const createPromoSchema = object({
 
 export const validatePromoSchema = object({
   params: object({
-    promoId: string(),
+    promoId: string({ required_error: "Promo ID is required" }),
   }),
 });
 
 export const invalidatePromoSchema = object({
   params: object({
-    promoId: string(),
+    promoId: string({ required_error: "Promo ID is required" }),
   }),
 });

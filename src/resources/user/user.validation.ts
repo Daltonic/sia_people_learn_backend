@@ -68,14 +68,18 @@ export const updatePasswordSchema = object({
 
 export const upgradeUserSchema = object({
   body: object({
-    userId: string(),
-    upgradeUserTo: z.enum(["instructor", "admin"]),
+    userId: string({ required_error: "User ID is required" }),
+    upgradeUserTo: z.enum(["instructor", "admin"], {
+      required_error: "UpgradeUserTo is required",
+    }),
   }),
 });
 
 export const downgradeUserSchema = object({
   body: object({
-    userId: string(),
-    downgradeUserTo: z.enum(["instructor", "user"]),
+    userId: string({ required_error: "User Id is required" }),
+    downgradeUserTo: z.enum(["instructor", "user"], {
+      required_error: "downgradeUserTo is required",
+    }),
   }),
 });

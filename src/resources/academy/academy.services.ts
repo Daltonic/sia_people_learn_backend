@@ -234,7 +234,8 @@ class AcademyService {
     queryOptions: FetchAcademiesInterface,
     userId: string
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, difficulty } = queryOptions;
+    const { page, pageSize, searchQuery, filter, difficulty, deleted } =
+      queryOptions;
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.academyModel> = {};
@@ -251,10 +252,11 @@ class AcademyService {
         query.difficulty = difficulty;
       }
 
-      // Fetch current user and determine if the user is an admin.
-      // If the user is not an admin, then display only approved courses
+      // Non admins can only view approved and non-deleted academies
+      // Admin can view both approved and unapproved academies. They can also view deleted academies and filter by deleted
       if (!userId) {
         query.approved = true;
+        query.deleted = false;
       } else {
         const user = await this.userModel.findById(userId);
 
@@ -263,6 +265,12 @@ class AcademyService {
         }
         if (user.userType !== "admin") {
           query.approved = true;
+          query.deleted = false;
+        } else {
+          if (deleted) {
+            console.log(deleted);
+            query.deleted = deleted === "true";
+          }
         }
       }
 
@@ -272,8 +280,14 @@ class AcademyService {
         case "newest":
           sortOptions = { createdAt: -1 };
           break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
         case "recommended":
           //todo: Decide on a recommendation algorithm
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
           break;
       }
 
@@ -374,10 +388,18 @@ class AcademyService {
       }
 
       if (String(academy.userId) !== userId) {
-        throw new Error("You are not allowed to delete this academy");
+        throw new Error("Only the academy instructor can delete this academy");
       }
 
-      await this.academyModel.findByIdAndDelete(academyId);
+      if (academy.deleted) {
+        return "Academy already deleted";
+      }
+
+      await this.academyModel.findByIdAndUpdate(
+        academyId,
+        { deleted: true },
+        { new: true }
+      );
       return "Academy has been successfully deleted";
     } catch (e: any) {
       log.error(e.message);

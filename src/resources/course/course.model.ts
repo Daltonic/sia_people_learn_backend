@@ -12,6 +12,7 @@ export interface ICourse extends Document {
   imageUrl?: string;
   submitted: boolean;
   approved: boolean;
+  deleted: boolean;
   rating?: number;
   reviewsCount?: number | null;
   tags: string[];
@@ -40,6 +41,7 @@ const CourseSchema = new Schema<ICourse>(
     imageUrl: { type: String },
     submitted: { type: Boolean, default: false },
     approved: { type: Boolean, default: false },
+    deleted: { type: Boolean, default: false },
     highlights: [{ type: String }],
     requirements: [{ type: String }],
     rating: { type: Number },

@@ -180,7 +180,7 @@ class CourseService {
       }
 
       if (String(course.userId) !== userId) {
-        throw new Error("You are not authorised to delete this course");
+        throw new Error("Only the course instructor can delete this course");
       }
 
       // Delete the course from the user document
@@ -191,9 +191,12 @@ class CourseService {
       );
 
       // Now delete the course document
-      await this.courseModel.findByIdAndDelete(courseId);
+      await this.courseModel.findByIdAndUpdate(
+        courseId,
+        { deleted: true },
+        { new: true }
+      );
 
-      // todo: Remember to delete course from academy when academy model is created
       return "Course successfully deleted";
     } catch (e: any) {
       log.error(e.message);
@@ -235,7 +238,8 @@ class CourseService {
     queryOptions: FetchCoursesInterface,
     userId: string
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, difficulty } = queryOptions;
+    const { page, pageSize, searchQuery, filter, difficulty, deleted } =
+      queryOptions;
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.courseModel> = {};
@@ -252,10 +256,11 @@ class CourseService {
         query.difficulty = difficulty;
       }
 
-      // Fetch current user and determine if the user is an admin.
-      // If the user is not an admin, then display only approved courses
+      // Non admins can only view approved and non-deleted courses
+      // Admin can view both approved and unapproved courses. They can also view deleted academies and filter by deleted
       if (!userId) {
         query.approved = true;
+        query.deleted = false;
       } else {
         const user = await this.userModel.findById(userId);
         if (!user) {
@@ -264,6 +269,11 @@ class CourseService {
 
         if (user.userType !== "admin") {
           query.approved = true;
+          query.deleted = false;
+        } else {
+          if (deleted) {
+            query.deleted = deleted === "true";
+          }
         }
       }
 
@@ -273,8 +283,14 @@ class CourseService {
         case "newest":
           sortOptions = { createdAt: -1 };
           break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
         case "recommended":
           //todo: Decide on a recommendation algorithm
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
           break;
       }
 

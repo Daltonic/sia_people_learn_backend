@@ -76,7 +76,9 @@ class PostService {
 
       // Ensure that current user is either the post creator or an admin
       if (user.userType !== "admin" && userId !== String(post.userId)) {
-        throw new Error("You are not permitted to update this Post");
+        throw new Error(
+          "Only an admin or Post creator is permitted to update this post"
+        );
       }
 
       const updatedPost = await this.postModel.findByIdAndUpdate(
@@ -183,7 +185,8 @@ class PostService {
     queryOptions: FetchPostsInterface,
     userId: string
   ): Promise<object | Error> {
-    const { searchQuery, filter, page, pageSize, parentsOnly } = queryOptions;
+    const { searchQuery, filter, page, pageSize, parentsOnly, deleted } =
+      queryOptions;
     try {
       // Design a filtering stratefy
       const query: FilterQuery<typeof this.postModel> = {};
@@ -199,10 +202,11 @@ class PostService {
         query.parentId = null;
       }
 
-      // Fetch current user and determine if the user is an admin.
-      // If the user is not an admin, then display only approved courses
+      // Non admins can only view published and non-deleted posts
+      // Admin can view both published and unpublished posts. They can also view deleted posts and filter by deleted
       if (!userId) {
         query.published = true;
+        query.deleted = false;
       } else {
         const user = await this.userModel.findById(userId);
         if (!user) {
@@ -211,6 +215,11 @@ class PostService {
 
         if (user.userType !== "admin") {
           query.published = true;
+          query.deleted = false;
+        } else {
+          if (deleted) {
+            query.deleted = deleted === "true";
+          }
         }
       }
 
@@ -220,8 +229,14 @@ class PostService {
         case "newest":
           sortOptions = { createdAt: -1 };
           break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
         case "recommended":
           //todo: Decide on a recommendation algorithm
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
           break;
       }
 
@@ -258,7 +273,7 @@ class PostService {
   public async deletePost(
     postId: string,
     userId: string,
-    deleteWithChildren: boolean
+    deleteWithChildren?: "true" | "false"
   ): Promise<string | Error> {
     try {
       // Ensure that the post exists
@@ -278,24 +293,35 @@ class PostService {
         throw new Error("You are not permitted to delete this Post");
       }
 
-      if (deleteWithChildren) {
+      if (deleteWithChildren && deleteWithChildren === "true") {
         await Promise.all(
           post.comments.map((comment: Schema.Types.ObjectId) =>
-            this.postModel.findByIdAndDelete(comment)
+            this.postModel.findByIdAndUpdate(
+              comment,
+              { deleted: true },
+              { new: true }
+            )
           )
         );
       } else {
         await Promise.all(
           post.comments.map((comment: Schema.Types.ObjectId) =>
-            this.postModel.findByIdAndUpdate(comment, {
-              parentId: null,
-              deleted: true,
-            })
+            this.postModel.findByIdAndUpdate(
+              comment,
+              {
+                parentId: null,
+              },
+              { new: true }
+            )
           )
         );
       }
 
-      await this.postModel.findByIdAndDelete(postId);
+      await this.postModel.findByIdAndUpdate(
+        postId,
+        { deleted: true },
+        { new: true }
+      );
 
       return "Post has been successfully deleted";
     } catch (e: any) {

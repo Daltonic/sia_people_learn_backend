@@ -3,6 +3,7 @@ import {
   approveTestimonySchema,
   createTestimonySchema,
   deleteTestimonySchema,
+  fetchTestimoniesSchema,
   updateTestimonySchema,
 } from "@/resources/testimony/testimony.validation";
 
@@ -16,3 +17,6 @@ export type ApproveTestimonyInterface = TypeOf<
 export type DeleteTestimonyInterface = TypeOf<
   typeof deleteTestimonySchema
 >["params"];
+export type FetchTestimoniesInterface = TypeOf<
+  typeof fetchTestimoniesSchema
+>["query"];
