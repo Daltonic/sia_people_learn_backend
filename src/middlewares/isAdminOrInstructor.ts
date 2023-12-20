@@ -13,7 +13,7 @@ export default function isAdminOrInstructor(
     next(
       new HttpException(
         StatusCodes.UNAUTHORIZED,
-        "User not authorised to access the route"
+        "You must be an Admin or Intructor to access this route"
       )
     );
   } else {

@@ -11,6 +11,7 @@ export interface IAcademy extends Document {
   duration: number;
   submitted: boolean;
   approved: boolean;
+  deleted: boolean;
   orderCount: number;
   rating?: number | null;
   reviewsCount: number | null;
@@ -38,6 +39,7 @@ const AcademySchema = new Schema<IAcademy>(
     duration: { type: Number, default: 0 },
     submitted: { type: Boolean, default: false },
     approved: { type: Boolean, default: false },
+    deleted: { type: Boolean, default: false },
     orderCount: { type: Number, default: 0 },
     rating: { type: Number, default: null },
     reviewsCount: { type: Number, default: null },

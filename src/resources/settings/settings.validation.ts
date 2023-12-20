@@ -2,9 +2,9 @@ import { object, string } from "zod";
 
 export const createSiteSettingsSchema = object({
   body: object({
-    bannerUrl: string(),
-    bannerCaption: string(),
-    bannerText: string(),
+    bannerUrl: string({ required_error: "Banner url is required" }),
+    bannerCaption: string({ required_error: "Banner caption is required" }),
+    bannerText: string({ required_error: "Banner text is required" }),
   }),
 });
 
@@ -15,12 +15,12 @@ export const updateSiteSettingsSchema = object({
     bannerText: string().optional(),
   }),
   params: object({
-    settingsId: string(),
+    settingsId: string({ required_error: "settingId is required" }),
   }),
 });
 
 export const FetchSiteSettingsSchema = object({
   params: object({
-    settingId: string(),
+    settingId: string({ required_error: "settingId is required" }),
   }),
 });

@@ -145,7 +145,9 @@ class AcademyController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     const queryOptions = req.query;
-    const userId = res.locals?.user?._id;
+
+    const userId = res.locals.user?._id;
+
     try {
       const result = await this.academyService.fetchAcademies(
         queryOptions,

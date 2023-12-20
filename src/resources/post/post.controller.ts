@@ -182,13 +182,12 @@ class PostController implements Controller {
   ): Promise<Response | void> => {
     const { postId } = req.params;
     const { _id: userId } = res.locals.user;
-    const { deleteWithChildren } = req.query;
 
     try {
       const message = await this.postService.deletePost(
         postId,
         userId,
-        deleteWithChildren === "true"
+        req.query?.deleteWithChildren
       );
       res.status(StatusCodes.OK).send(message);
     } catch (e: any) {

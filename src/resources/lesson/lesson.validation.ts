@@ -2,11 +2,11 @@ import { number, object, string } from "zod";
 
 export const createLessonSchema = object({
   body: object({
-    courseId: string(),
-    title: string(),
-    overview: string(),
-    description: string(),
-    duration: number(),
+    courseId: string({ required_error: "Course ID is required" }),
+    title: string({ required_error: "Lesson title is required" }),
+    overview: string({ required_error: "Lesson overview is required" }),
+    description: string({ required_error: "Lesson description is required" }),
+    duration: number({ required_error: "Lesson duration is required" }),
     imageUrl: string().optional(),
     videoUrl: string().optional(),
     downloadableUrl: string().optional(),
@@ -26,24 +26,24 @@ export const updateLessonSchema = object({
     order: number().optional(),
   }),
   params: object({
-    lessonId: string(),
+    lessonId: string({ required_error: "Lesson ID is required" }),
   }),
 });
 
 export const deleteLessonSchema = object({
   params: object({
-    lessonId: string(),
+    lessonId: string({ required_error: "Lesson ID is required" }),
   }),
 });
 
 export const fetchLessonSchema = object({
   params: object({
-    lessonId: string(),
+    lessonId: string({ required_error: "Lesson ID is required" }),
   }),
 });
 
 export const fetchLessonsSchema = object({
   query: object({
-    courseId: string({ required_error: "CourseId is required" }),
+    courseId: string({ required_error: "Course ID is required" }),
   }),
 });

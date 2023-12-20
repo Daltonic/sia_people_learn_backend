@@ -13,7 +13,7 @@ export default function isAdmin(
     next(
       new HttpException(
         StatusCodes.UNAUTHORIZED,
-        "User not authorised to access the route"
+        "You must be an admin to access this route"
       )
     );
   }
