@@ -37,7 +37,7 @@ const UserSchema = new Schema<IUser>(
       enum: ["admin", "instructor", "user"],
       default: "user",
     },
-    password: { type: String, required: true },
+    password: { type: String },
     verificationCode: { type: String, default: () => nanoid() },
     verified: { type: Boolean, default: false },
     courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
