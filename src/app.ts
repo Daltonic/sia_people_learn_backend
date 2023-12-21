@@ -6,6 +6,7 @@ import cors from "cors";
 import compression from "compression";
 import passport from "passport";
 import { deserialiseUser, errorMiddleware } from "./middlewares";
+import "@/middlewares/passportStrategies";
 
 class App {
   private express: Application;

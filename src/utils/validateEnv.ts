@@ -14,5 +14,9 @@ export default function validateEnv(): void {
     LOG_LEVEL: str(),
     ACCESS_TOKEN_EXPIRES_IN: str(),
     MAXIMUM_INSTRUCTOR_PROMO: str(),
+    GOOGLE_CLIENT_ID: str(),
+    GOOGLE_CLIENT_SECRET: str(),
+    GITHUB_CLIENT_ID: str(),
+    GITHUB_CLIENT_SECRET: str(),
   });
 }
