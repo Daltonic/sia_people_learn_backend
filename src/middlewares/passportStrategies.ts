@@ -66,53 +66,62 @@ export const googleStrategy = new GoogleStrategy(
   }
 );
 
-// const facebookStrategy = new FacebookStrategy(
-//   {
-//     clientID: process.env.FACEBOOK_CLIENT_ID!,
-//     clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-//     callbackURL: `${process.env.ORIGIN}/auth/facebook/callback`,
-//   },
-//   async (
-//     accessToken: string,
-//     refreshToken: string,
-//     profile: FacebookProfile,
-//     done
-//   ) => {
-//     try {
-//       // Get the relevant data from the user profile
-//       const { name, emails, photos, displayName } = profile;
-//       console.log(name, emails, photos, displayName);
+const facebookStrategy = new FacebookStrategy(
+  {
+    clientID: process.env.FACEBOOK_CLIENT_ID!,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    callbackURL: `${process.env.ORIGIN}/api/v1/auth/facebook/callback`,
+    profileFields: [
+      "id",
+      "displayName",
+      "email",
+      "first_name",
+      "middle_name",
+      "last_name",
+    ],
+  },
+  async (
+    accessToken: string,
+    refreshToken: string,
+    profile: FacebookProfile,
+    done: DoneCallback
+  ) => {
+    try {
+      // Get the relevant data from the user profile
+      const { name, emails, photos, displayName } = profile;
+      // console.log(name, emails, photos, displayName);
+      console.log(profile);
 
-//       if (!emails) {
-//         throw new Error("Emails do not exist");
-//       }
+      if (!emails) {
+        throw new Error("Emails do not exist");
+      }
 
-//       // Check if the user already exist in the database
-//       const user = await User.findOne({ email: emails[0].value });
-//       if (user) {
-//         // Sign accessToken
-//         const accessToken = createAccessToken(user);
+      // Check if the user already exist in the database
+      const user = await User.findOne({ email: emails[0].value });
+      if (user) {
+        // Sign accessToken
+        const accessToken = createAccessToken(user);
 
-//         return done(null, accessToken);
-//       } else {
-//         // Create the user
-//         const user = await User.create({
-//           email: emails[0].value,
-//           firstName: name ? name.givenName : displayName,
-//           lastName: name ? name.familyName : displayName,
-//           imgUrl: photos ? photos[0].value : null,
-//         });
+        return done(null, accessToken);
+      } else {
+        // Create the user
+        const user = await User.create({
+          email: emails[0].value,
+          firstName: name ? name.givenName : displayName,
+          lastName: name ? name.familyName : displayName,
+          imgUrl: photos ? photos[0].value : null,
+        });
 
-//         // Create the user token
-//         const accessToken = createAccessToken(user);
-//         done(null, accessToken);
-//       }
-//     } catch (e: any) {
-//       log.error(e.message);
-//       return done(e);
-//     }
-//   }
-// );
+        // Create the user token
+        const accessToken = createAccessToken(user);
+        done(null, accessToken);
+      }
+    } catch (e: any) {
+      log.error(e.message);
+      return done(e);
+    }
+  }
+);
 
 const githubStrategy = new GithubStrategy(
   {
@@ -167,63 +176,68 @@ const githubStrategy = new GithubStrategy(
   }
 );
 
-// const twitterStrategy = new TwitterStrategy(
-//   {
-//     consumerKey: process.env.TWITTER_CONSUMER_KEY!,
-//     consumerSecret: process.env.TWITTER_CONSUMER_SECRET!,
-//     callbackURL: `${process.env.ORIGIN}/auth/twitter/callback`,
-//   },
-//   async (
-//     accessToken: string,
-//     refreshToken: string,
-//     profile: TwitterProfile,
-//     done: DoneCallback
-//   ) => {
-//     try {
-//       // Get the relevant data from the user profile
-//       const { name, emails, photos, displayName } = profile;
-//       console.log(name, emails, photos, displayName);
+const twitterStrategy = new TwitterStrategy(
+  {
+    consumerKey: process.env.TWITTER_CONSUMER_KEY!,
+    consumerSecret: process.env.TWITTER_CONSUMER_SECRET!,
+    callbackURL: `${process.env.ORIGIN}/api/v1/auth/twitter/callback`,
+  },
+  async (
+    accessToken: string,
+    refreshToken: string,
+    profile: TwitterProfile,
+    done: DoneCallback
+  ) => {
+    try {
+      // Get the relevant data from the user profile
+      const { emails, photos, displayName } = profile;
+      console.log(profile);
 
-//       if (!emails) {
-//         throw new Error("Emails do not exist");
-//       }
+      if (!emails) {
+        throw new Error("Emails do not exist");
+      }
 
-//       // Check if the user already exist in the database
-//       const user = await User.findOne({ email: emails[0].value });
-//       if (user) {
-//         // Sign accessToken
-//         const accessToken = createAccessToken(user);
+      // Check if the user already exist in the database
+      const user = await User.findOne({ email: emails[0].value });
+      if (user) {
+        // Sign accessToken
+        const accessToken = createAccessToken(user);
 
-//         return done(null, accessToken);
-//       } else {
-//         // Create the user
-//         const user = await User.create({
-//           email: emails[0].value,
-//           firstName: name ? name.givenName : displayName,
-//           lastName: name ? name.familyName : displayName,
-//           imgUrl: photos ? photos[0].value : null,
-//         });
+        return done(null, { user, accessToken });
+      } else {
+        // CreateUser
+        const stripedEmail = emails[0].value.split("@");
+        const username = `${stripedEmail[0]}_${generateAlphanumeric(6)}`;
+        const [firstName, lastName] = displayName.split(" ");
+        const user = await User.create({
+          email: emails[0].value,
+          username,
+          firstName,
+          lastName,
+          imgUrl: photos ? photos[0].value : null,
+          verified: true,
+        });
 
-//         // Create the user token
-//         const accessToken = createAccessToken(user);
-//         done(null, accessToken);
-//       }
-//     } catch (e: any) {
-//       log.error(e.message);
-//       return done(e);
-//     }
-//   }
-// );
+        // Create the user token
+        const accessToken = createAccessToken(user);
+        return done(null, { user, accessToken });
+      }
+    } catch (e: any) {
+      log.error(e.message);
+      return done(e);
+    }
+  }
+);
 
 passport.use(googleStrategy);
-// passport.use(facebookStrategy);
+passport.use(facebookStrategy);
 passport.use(githubStrategy);
-// passport.use(twitterStrategy);
+passport.use(twitterStrategy);
 
-// passport.serializeUser((user, done) => {
-//   done(null, user);
-// });
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
 
-// passport.deserializeUser((user: any, done) => {
-//   done(null, user);
-// });
+passport.deserializeUser((user: any, done) => {
+  done(null, user);
+});

@@ -18,5 +18,9 @@ export default function validateEnv(): void {
     GOOGLE_CLIENT_SECRET: str(),
     GITHUB_CLIENT_ID: str(),
     GITHUB_CLIENT_SECRET: str(),
+    TWITTER_CONSUMER_KEY: str(),
+    TWITTER_CONSUMER_SECRET: str(),
+    FACEBOOK_CLIENT_ID: str(),
+    FACEBOOK_CLIENT_SECRET: str(),
   });
 }

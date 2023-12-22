@@ -8,7 +8,7 @@ import { StatusCodes } from "http-status-codes";
 import { loginSchema } from "@/resources/session/session.validation";
 import { loggedIn, validateResource } from "@/middlewares/index";
 import { get } from "lodash";
-import passport from "passport";
+import passport, { session } from "passport";
 import { IUser } from "../user/user.model";
 
 class SessionController implements Controller {
@@ -56,6 +56,29 @@ class SessionController implements Controller {
       this.socialLoginSuccess
     );
 
+    this.router.get(
+      `${this.path}/login/twitter`,
+      passport.authenticate("twitter", { session: false })
+    );
+    this.router.get(
+      "/auth/twitter/callback",
+      passport.authenticate("twitter", { session: false }),
+      this.socialLoginSuccess
+    );
+
+    this.router.get(
+      `${this.path}/login/facebook`,
+      passport.authenticate("facebook", {
+        scope: ["email"],
+        session: false,
+      })
+    );
+    this.router.get(
+      `/auth/facebook/callback`,
+      passport.authenticate("facebook", { session: false }),
+      this.socialLoginSuccess
+    );
+
     this.router.get(`${this.path}/refresh `, this.refresh);
 
     this.router.delete(`${this.path}/logout`, loggedIn, this.logout);
@@ -87,7 +110,6 @@ class SessionController implements Controller {
         user: IUser;
         accessToken: string;
       };
-      console.log(user);
 
       res.status(200).json({ user: filteredUser(user), accessToken });
     } catch (e: any) {
