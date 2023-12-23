@@ -92,9 +92,9 @@ const facebookStrategy = new FacebookStrategy(
       // console.log(name, emails, photos, displayName);
       console.log(profile);
 
-      if (!emails) {
-        throw new Error("Emails do not exist");
-      }
+      // if (!emails) {
+      //   throw new Error("Emails do not exist");
+      // }
 
       // Check if the user already exist in the database
       const user = await User.findOne({ email: emails[0].value });
