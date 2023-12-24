@@ -17,6 +17,7 @@ import {
   Profile as TwitterProfile,
 } from "passport-twitter";
 import { createAccessToken, generateAlphanumeric, log } from "@/utils/index";
+import e from "express";
 
 export const googleStrategy = new GoogleStrategy(
   {
@@ -74,7 +75,7 @@ const facebookStrategy = new FacebookStrategy(
     profileFields: [
       "id",
       "displayName",
-      "email",
+      "emails",
       "first_name",
       "middle_name",
       "last_name",
@@ -88,28 +89,32 @@ const facebookStrategy = new FacebookStrategy(
   ) => {
     try {
       // Get the relevant data from the user profile
-      const { name, emails, photos, displayName } = profile;
-      // console.log(name, emails, photos, displayName);
+      const {
+        emails,
+        photos,
+        displayName,
+        _json: { first_name, last_name, id },
+      } = profile;
       console.log(profile);
 
-      // if (!emails) {
-      //   throw new Error("Emails do not exist");
-      // }
-
       // Check if the user already exist in the database
-      const user = await User.findOne({ email: emails[0].value });
+      const email = emails ? emails[0].value : id;
+
+      const user = await User.findOne({ email });
       if (user) {
         // Sign accessToken
+
         const accessToken = createAccessToken(user);
 
         return done(null, accessToken);
       } else {
         // Create the user
         const user = await User.create({
-          email: emails[0].value,
-          firstName: name ? name.givenName : displayName,
-          lastName: name ? name.familyName : displayName,
+          email: email,
+          firstName: first_name || displayName.split(" ")[0],
+          lastName: last_name || displayName.split(" ")[1],
           imgUrl: photos ? photos[0].value : null,
+          username: id,
         });
 
         // Create the user token
@@ -234,10 +239,10 @@ passport.use(facebookStrategy);
 passport.use(githubStrategy);
 passport.use(twitterStrategy);
 
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
+// passport.serializeUser((user, done) => {
+//   done(null, user);
+// });
 
-passport.deserializeUser((user: any, done) => {
-  done(null, user);
-});
+// passport.deserializeUser((user: any, done) => {
+//   done(null, user);
+// });
