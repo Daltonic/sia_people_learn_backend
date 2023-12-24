@@ -69,7 +69,6 @@ class SessionController implements Controller {
     this.router.get(
       `${this.path}/login/facebook`,
       passport.authenticate("facebook", {
-        scope: ["email"],
         session: false,
       })
     );
@@ -106,10 +105,12 @@ class SessionController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     try {
+      console.log(req.user);
       const { user, accessToken } = req.user as any as {
         user: IUser;
         accessToken: string;
       };
+      console.log(user, accessToken);
 
       res.status(200).json({ user: filteredUser(user), accessToken });
     } catch (e: any) {
