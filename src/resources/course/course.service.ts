@@ -3,6 +3,7 @@ import Course from "@/resources/course/course.model";
 import {
   CreateCourseInterface,
   FetchCoursesInterface,
+  OrderLessonInterface,
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
 import log from "@/utils/logger";
@@ -30,24 +31,67 @@ class CourseService {
       imageUrl,
       highlights,
       requirements,
+      type,
     } = courseInput;
     try {
+      // Check the type of Course. If its a course, then highlights, requirements and difficulty must be provided.
+      if (type === "Course") {
+        let missingData = false;
+        let message = "";
+        if (!difficulty) {
+          message += "Course Difficulty is required. ";
+          missingData = true;
+        }
+
+        if (!requirements) {
+          message += "Course Requirements is required. ";
+          missingData = true;
+        }
+
+        if (!highlights) {
+          message += "Course Highlights is required. ";
+        }
+
+        if (missingData) {
+          throw new Error(message);
+        }
+      }
+
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new Error("Content creator not found");
       }
 
-      const newCourse = await this.courseModel.create({
-        name,
-        price,
-        description,
-        overview,
-        difficulty,
-        userId,
-        requirements,
-        highlights,
-        imageUrl: imageUrl || null,
-      });
+      // Get the newCourse object;
+      let courseData: object;
+      if (type === "Course") {
+        courseData = {
+          name,
+          price,
+          type,
+          description,
+          overview,
+          difficulty,
+          userId,
+          requirements,
+          highlights,
+          tags,
+          imageUrl: imageUrl || null,
+        };
+      } else {
+        courseData = {
+          name,
+          price,
+          description,
+          overview,
+          userId,
+          tags,
+          type,
+          imageUrl: imageUrl || null,
+        };
+      }
+
+      const newCourse = await this.courseModel.create(courseData);
 
       // Get the tags if they exist, otherwise, create the tags
       const tagDocumentIds = [];
@@ -81,7 +125,7 @@ class CourseService {
       return newCourse;
     } catch (e: any) {
       log.error(e.message);
-      throw new Error("Error creating course");
+      throw new Error(e.message || "Error creating course");
     }
   }
 
@@ -100,6 +144,7 @@ class CourseService {
       tags,
       highlights,
       requirements,
+      type,
     } = updateCourseInput;
 
     try {
@@ -146,9 +191,9 @@ class CourseService {
         }
       }
 
-      const updatedCourse = await this.courseModel.findByIdAndUpdate(
-        courseId,
-        {
+      let updateData: object;
+      if (type === "Course") {
+        updateData = {
           name: name || course.name,
           description: description || course.description,
           overview: overview || course.overview,
@@ -158,7 +203,21 @@ class CourseService {
           highlights: highlights || course.highlights,
           requirements: requirements || course.requirements,
           tags: tagDocumentIds,
-        },
+        };
+      } else {
+        updateData = {
+          name: name || course.name,
+          description: description || course.description,
+          overview: overview || course.overview,
+          price: price || course.price,
+          imageUrl: imageUrl || course.imageUrl,
+          tags: tagDocumentIds,
+        };
+      }
+
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
+        courseId,
+        updateData,
         { new: true }
       );
 
@@ -302,28 +361,22 @@ class CourseService {
       const courses = await this.courseModel
         .find(query)
         .populate({
-          path: "lessons",
-          model: this.lessonModel,
-          select: "_id title",
-        })
-        .populate({
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
         })
-        .populate({
-          path: "tags",
-          model: this.tagModel,
-          select: "_id name",
-        })
         .skip(skipAmount)
         .limit(numericPageSize)
-        .sort(sortOptions);
+        .sort(sortOptions)
+        .select(
+          "name price description overview difficulty duration lessonsCount rating reviewsCount requirements highlights approved"
+        );
 
       // Find out if there is a next page
       const totalCourses = await this.courseModel.countDocuments(query);
       const isNext = totalCourses > skipAmount + courses.length;
-      return { courses, isNext };
+      const numOfPages = Math.ceil(totalCourses / numericPageSize);
+      return { courses, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error fetching Courses");
@@ -379,6 +432,38 @@ class CourseService {
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error submitting Course");
+    }
+  }
+
+  public async orderLessons(
+    courseId: string,
+    lessonsData: OrderLessonInterface["body"],
+    userId: string
+  ): Promise<string | Error> {
+    const { lessonsOrder } = lessonsData;
+
+    try {
+      const course = await this.courseModel.findById(courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      if (String(course.userId) !== userId) {
+        throw new Error("Only course owner can order lessons");
+      }
+
+      lessonsOrder.map(async (lesson) => {
+        await this.lessonModel.findByIdAndUpdate(
+          lesson.lessonId,
+          { order: lesson.order },
+          { new: true }
+        );
+      });
+
+      return "Lessons successfully reordered";
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error ordering lessons");
     }
   }
 }

@@ -195,7 +195,8 @@ class ReviewService {
       // Find out if there is a next page
       const totalReviews = await this.reviewModel.countDocuments(query);
       const isNext = totalReviews > skipAmount + reviews.length;
-      return { reviews, isNext };
+      const numOfPages = Math.ceil(totalReviews / numericPageSize);
+      return { reviews, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching reviews");

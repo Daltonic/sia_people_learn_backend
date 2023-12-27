@@ -231,8 +231,9 @@ class TestimonyService {
       // Find out if there is a next page
       const totalTestimonies = await this.testimonyModel.countDocuments(query);
       const isNext = totalTestimonies > skipAmount + testimonies.length;
+      const numOfPages = Math.ceil(totalTestimonies / numericPageSize);
 
-      return { testimonies, isNext };
+      return { testimonies, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Testimonies");

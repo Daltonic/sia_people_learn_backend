@@ -161,7 +161,8 @@ class OrderService {
       // Find out if there is a next page
       const totalOrders = await this.orderModel.countDocuments(query);
       const isNext = totalOrders > skipAmount + orders.length;
-      return { orders, isNext };
+      const numOfPages = Math.ceil(totalOrders / numericPageSize);
+      return { orders, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching orders");

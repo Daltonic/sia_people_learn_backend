@@ -1,10 +1,12 @@
 import { TypeOf } from "zod";
 import {
+  addCourseSchema,
   approveAcademySchema,
   createAcademySchema,
   deleteAcademySchema,
   fetchAcademiesSchema,
   fetchAcademySchema,
+  removeCourseSchema,
   submitAcademySchema,
   updateAcademySchema,
 } from "@/resources/academy/academy.validation";
@@ -24,3 +26,6 @@ export type ApproveAcademyInterface = TypeOf<
 export type FetchAcademiesInterface = TypeOf<
   typeof fetchAcademiesSchema
 >["query"];
+
+export type AddCourseInterface = TypeOf<typeof addCourseSchema>["query"];
+export type RemoveCourseInterface = TypeOf<typeof removeCourseSchema>["query"];

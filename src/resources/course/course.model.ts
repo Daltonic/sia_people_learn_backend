@@ -12,6 +12,7 @@ export interface ICourse extends Document {
   imageUrl?: string;
   submitted: boolean;
   approved: boolean;
+  type: "Course" | "Book";
   deleted: boolean;
   rating?: number;
   reviewsCount?: number | null;
@@ -33,7 +34,10 @@ const CourseSchema = new Schema<ICourse>(
     difficulty: {
       type: String,
       enum: ["Beginner", "Intermediate", "Advanced"],
-      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["Course", "Book"],
     },
     duration: { type: Number, default: 0 },
     lessonsCount: { type: Number },

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router, query } from "express";
 import AcademyService from "@/resources/academy/academy.services";
 import Controller from "@/utils/interfaces/controller.interface";
 import {
+  AddCourseInterface,
   ApproveAcademyInterface,
   CreateAcademyInterface,
   DeleteAcademyInterface,
@@ -14,11 +15,13 @@ import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
 import validateResource from "@/middlewares/validation.middleware";
 import {
+  addCourseSchema,
   approveAcademySchema,
   createAcademySchema,
   deleteAcademySchema,
   fetchAcademiesSchema,
   fetchAcademySchema,
+  removeCourseSchema,
   submitAcademySchema,
   updateAcademySchema,
 } from "@/resources/academy/academy.validation";
@@ -74,6 +77,18 @@ class AcademyController implements Controller {
       `${this.path}/delete/:academyId`,
       [isAdminOrInstructor, validateResource(deleteAcademySchema)],
       this.deleteAcademy
+    );
+
+    this.router.patch(
+      `${this.path}/addCourse`,
+      [loggedIn, validateResource(addCourseSchema)],
+      this.addCourse
+    );
+
+    this.router.patch(
+      `${this.path}/removeCourse`,
+      [loggedIn, validateResource(removeCourseSchema)],
+      this.removeCourse
     );
   };
 
@@ -212,6 +227,59 @@ class AcademyController implements Controller {
       res.status(StatusCodes.OK).send(message);
     } catch (e: any) {
       if (e.message === "User not authorised") {
+        next(new HttpException(StatusCodes.UNAUTHORIZED, e.message));
+      } else {
+        next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+      }
+    }
+  };
+
+  private addCourse = async (
+    req: Request<{}, {}, {}, AddCourseInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const { courseId, academyId } = req.query;
+    const { _id: userId } = res.locals.user;
+    try {
+      const academy = await this.academyService.addCourse(
+        academyId,
+        courseId,
+        userId
+      );
+      res.status(StatusCodes.OK).json(academy);
+    } catch (e: any) {
+      if (
+        e.message ===
+          "Only academy instructor can add a course to this academy" ||
+        e.message === "Only course instructor can add this course to an academy"
+      ) {
+        next(new HttpException(StatusCodes.UNAUTHORIZED, e.message));
+      } else {
+        next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+      }
+    }
+  };
+
+  private removeCourse = async (
+    req: Request<{}, {}, {}, AddCourseInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const { courseId, academyId } = req.query;
+    const { _id: userId } = res.locals.user;
+    try {
+      const academy = await this.academyService.removeCourse(
+        academyId,
+        courseId,
+        userId
+      );
+      res.status(StatusCodes.OK).json(academy);
+    } catch (e: any) {
+      if (
+        e.message ===
+        "Only academy instructor can remove a course to this academy"
+      ) {
         next(new HttpException(StatusCodes.UNAUTHORIZED, e.message));
       } else {
         next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

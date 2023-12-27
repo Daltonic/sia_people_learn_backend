@@ -25,22 +25,10 @@ class SiteSettingsController implements Controller {
   }
 
   private initialiseRoutes() {
-    this.router.post(
+    this.router.patch(
       `${this.path}/create`,
       [isAdmin, validateResource(createSiteSettingsSchema)],
       this.createSiteSettings
-    );
-
-    this.router.put(
-      `${this.path}/update/:settingsId`,
-      [isAdmin, validateResource(updateSiteSettingsSchema)],
-      this.updateSiteSettings
-    );
-
-    this.router.get(
-      `${this.path}/:settingId`,
-      [isAdmin, validateResource(FetchSiteSettingsSchema)],
-      this.fetchSiteSettingsById
     );
 
     this.router.get(`${this.path}`, isAdmin, this.fetchSiteSettings);
@@ -56,45 +44,6 @@ class SiteSettingsController implements Controller {
       const settings =
         await this.siteSettingsService.createSiteSettings(settingsInput);
       res.status(StatusCodes.CREATED).json(settings);
-    } catch (e: any) {
-      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
-    }
-  };
-
-  private updateSiteSettings = async (
-    req: Request<
-      UpdateSiteSettingsInterface["params"],
-      {},
-      UpdateSiteSettingsInterface["body"]
-    >,
-    res: Response,
-    next: NextFunction
-  ): Promise<Response | void> => {
-    const settingsInput = req.body;
-    const { settingsId } = req.params;
-
-    try {
-      const settings = await this.siteSettingsService.updateSiteSettings(
-        settingsInput,
-        settingsId
-      );
-      res.status(StatusCodes.OK).json(settings);
-    } catch (e: any) {
-      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
-    }
-  };
-
-  private fetchSiteSettingsById = async (
-    req: Request<FetchSiteSettingsInterface>,
-    res: Response,
-    next: NextFunction
-  ): Promise<Response | void> => {
-    const { settingId } = req.params;
-
-    try {
-      const settings =
-        await this.siteSettingsService.fetchSiteSettingsById(settingId);
-      res.status(StatusCodes.OK).json(settings);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }

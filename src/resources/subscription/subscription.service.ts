@@ -3,8 +3,12 @@ import Course from "@/resources/course/course.model";
 import Order, { IOrder } from "@/resources/order/order.model";
 import User from "@/resources/user/user.model";
 import Subscription from "@/resources/subscription/subscription.model";
-import { CreateSubscriptionInterface } from "@/resources/subscription/subscription.interface";
+import {
+  CreateSubscriptionInterface,
+  FetchSubscriptionsInterface,
+} from "@/resources/subscription/subscription.interface";
 import log from "@/utils/logger";
+import { FilterQuery } from "mongoose";
 
 class SubscriptionService {
   private userModel = User;
@@ -17,13 +21,8 @@ class SubscriptionService {
     subscriptionInput: CreateSubscriptionInterface,
     userId: string
   ): Promise<object | Error> {
-    const {
-      orderId,
-      paymentFrequency,
-      paymentFrequencyType,
-      productId,
-      productType,
-    } = subscriptionInput;
+    const { orderId, paymentFrequency, productId, productType } =
+      subscriptionInput;
     try {
       // Ensure that this is a valid user;
       const user = await this.userModel.findById(userId);
@@ -41,25 +40,21 @@ class SubscriptionService {
       }
       let expiresAt: Date;
 
-      if (paymentFrequencyType === "Month") {
-        expiresAt = new Date(
-          Date.now() + paymentFrequency * 30 * 24 * 60 * 60 * 1000
-        );
+      if (paymentFrequency === "month") {
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       } else {
-        expiresAt = new Date(
-          Date.now() + paymentFrequency * 365 * 24 * 60 * 60 * 1000
-        );
+        expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
       }
 
       // Ensure that the product exist
       switch (productType) {
-        case "Academy":
+        case "academy":
           const academy = await this.academyModel.findById(productId);
           if (!academy) {
             throw new Error("Academy not found");
           }
           break;
-        case "Course":
+        case "course":
           const course = await this.courseModel.findById(productId);
           if (!course) {
             throw new Error("Course not found");
@@ -70,17 +65,16 @@ class SubscriptionService {
       const subscription = await this.subscriptionModel.create({
         userId,
         orderId: orderId || null,
-        paymentFrequency,
-        paymentFrequencyType,
-        productType,
+        paymentFrequency: paymentFrequency === "month" ? "Month" : "Year",
+        productType: productType === "academy" ? "Academy" : "Course",
         productId,
         expiresAt,
         amount: order ? order.grandTotal : 0,
-        productModelType: productType,
+        productModelType: productType === "academy" ? "Academy" : "Course",
       });
 
       // Save the product in the user's academy or course collection
-      if (productType === "Academy") {
+      if (productType === "academy") {
         await this.userModel.findByIdAndUpdate(
           userId,
           { $push: { academies: productId } },
@@ -99,10 +93,64 @@ class SubscriptionService {
     }
   }
 
-  public async fetchSubscriptions(): Promise<object | Error> {
+  public async fetchSubscriptions(
+    userId: string,
+    queryOptions: FetchSubscriptionsInterface
+  ): Promise<object | Error> {
+    const { page, pageSize, filter, productType, status } = queryOptions;
     try {
+      // Ensure that this is a valid user
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Design the filtering strategy
+      const query: FilterQuery<typeof this.subscriptionModel> = {};
+      if (user.userType !== "admin") {
+        query.userId = userId;
+      }
+
+      if (productType) {
+        if (productType === "academy") {
+          query.productType = "Academy";
+        } else {
+          query.productType = "Course";
+        }
+      }
+
+      if (status) {
+        if (status === "completed") {
+          query.status = "Completed";
+        } else {
+          query.status = "Pending";
+        }
+      }
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
+        case "recommended":
+          //todo: Decide on a recommendation algorithm
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
       const subscriptions = await this.subscriptionModel
-        .find({})
+        .find(query)
         .populate({
           path: "userId",
           model: this.userModel,
@@ -116,45 +164,21 @@ class SubscriptionService {
           path: "orderId",
           model: this.orderModel,
           select: "orderCode transactionRef paymentType",
-        });
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
 
-      return subscriptions;
+      const totalSubscriptions =
+        await this.subscriptionModel.countDocuments(query);
+      const isNext = totalSubscriptions > skipAmount + subscriptions.length;
+
+      // Compute page size
+      const numOfPages = Math.ceil(totalSubscriptions / numericPageSize);
+      return { subscriptions, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching subscriptions");
-    }
-  }
-
-  public async fetchUserSubscriptions(userId: string): Promise<object | Error> {
-    try {
-      // Ensure that this is a valid user
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new Error("User not found");
-      }
-
-      // Get the user's subscriptions
-      const subscriptions = await this.subscriptionModel
-        .find({ userId: user._id })
-        .populate({
-          path: "productId",
-          select: "_id name overview description diffulty",
-        })
-        .populate({
-          path: "userId",
-          model: this.userModel,
-          select: "_id username firstName lastName",
-        })
-        .populate({
-          path: "orderId",
-          model: this.orderModel,
-          select: "_id orderCode",
-        });
-
-      return subscriptions;
-    } catch (e: any) {
-      log.error(e.message);
-      throw new Error(e.message || "Error fetching user's subscriptions");
     }
   }
 
@@ -178,8 +202,22 @@ class SubscriptionService {
       }
 
       // Ensure that current user is the subscription holder or an admin
-      if (user.userType !== "admin" && String(subscription.userId) !== userId) {
+      if (String(subscription.userId) !== userId) {
         throw new Error("User not permitted to delete this subscription");
+      }
+
+      if (subscription.productModelType === "Academy") {
+        await this.userModel.findOneAndUpdate(
+          { _id: userId },
+          { $pull: { academies: subscription.productId } },
+          { new: true }
+        );
+      } else {
+        await this.userModel.findOneAndUpdate(
+          { _id: userId },
+          { $pull: { courses: subscription.productId } },
+          { new: true }
+        );
       }
 
       await this.subscriptionModel.findByIdAndDelete(subscriptionId);

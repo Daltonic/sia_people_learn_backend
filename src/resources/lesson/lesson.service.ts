@@ -34,6 +34,10 @@ class LessonService {
         throw new Error("Course not found");
       }
 
+      if (course.type === "Book") {
+        throw new Error("Lessons cannot be assigned to a Book");
+      }
+
       // Ensure that only the course creator can update the course
       if (String(course.userId) !== userId) {
         throw new Error(

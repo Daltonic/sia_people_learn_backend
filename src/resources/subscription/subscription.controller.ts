@@ -3,6 +3,7 @@ import { NextFunction, Request, Router, Response } from "express";
 import {
   CreateSubscriptionInterface,
   DeleteSubscriptionInterface,
+  FetchSubscriptionsInterface,
 } from "@/resources/subscription/subscription.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
@@ -12,6 +13,7 @@ import { validateResource, loggedIn, isAdmin } from "@/middlewares/index";
 import {
   createSubsciptionSchema,
   deleteSubscriptionSchema,
+  fetchSubscriptionsSchema,
 } from "@/resources/subscription/subscription.validation";
 
 class SubscriptionController implements Controller {
@@ -30,15 +32,17 @@ class SubscriptionController implements Controller {
       this.createSubscription
     );
 
-    this.router.get(`${this.path}`, isAdmin, this.fetchSubscriptions);
+    this.router.get(
+      `${this.path}`,
+      [loggedIn, validateResource(fetchSubscriptionsSchema)],
+      this.fetchSubscriptions
+    );
 
     this.router.delete(
       `${this.path}/delete/:subscriptionId`,
       [loggedIn, validateResource(deleteSubscriptionSchema)],
       this.deleteSubscription
     );
-
-    this.router.get(`${this.path}/user`, loggedIn, this.fetchUserSubscriptions);
   }
 
   private createSubscription = async (
@@ -88,27 +92,17 @@ class SubscriptionController implements Controller {
   };
 
   private fetchSubscriptions = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<Response | void> => {
-    try {
-      const subscriptions = await this.subscriptionService.fetchSubscriptions();
-      res.status(StatusCodes.OK).json(subscriptions);
-    } catch (e: any) {
-      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
-    }
-  };
-
-  private fetchUserSubscriptions = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchSubscriptionsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
     const { _id: userId } = res.locals.user;
+    const queryOptions = req.query;
     try {
-      const subscriptions =
-        await this.subscriptionService.fetchUserSubscriptions(userId);
+      const subscriptions = await this.subscriptionService.fetchSubscriptions(
+        userId,
+        queryOptions
+      );
       res.status(StatusCodes.OK).json(subscriptions);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

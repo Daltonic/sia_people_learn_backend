@@ -185,8 +185,15 @@ class PostService {
     queryOptions: FetchPostsInterface,
     userId: string
   ): Promise<object | Error> {
-    const { searchQuery, filter, page, pageSize, parentsOnly, deleted } =
-      queryOptions;
+    const {
+      searchQuery,
+      filter,
+      page,
+      pageSize,
+      parentsOnly,
+      deleted,
+      parentId,
+    } = queryOptions;
     try {
       // Design a filtering stratefy
       const query: FilterQuery<typeof this.postModel> = {};
@@ -200,6 +207,10 @@ class PostService {
 
       if (parentsOnly) {
         query.parentId = null;
+      }
+
+      if (parentId) {
+        query.parentId = parentId;
       }
 
       // Non admins can only view published and non-deleted posts
@@ -261,9 +272,10 @@ class PostService {
         .limit(numericPageSize)
         .sort(sortOptions);
 
-      const totalCourses = await this.postModel.countDocuments(query);
-      const isNext = totalCourses > skipAmount + posts.length;
-      return { posts, isNext };
+      const totalPosts = await this.postModel.countDocuments(query);
+      const isNext = totalPosts > skipAmount + posts.length;
+      const numOfPages = Math.ceil(totalPosts / numericPageSize);
+      return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Posts");
@@ -294,26 +306,24 @@ class PostService {
       }
 
       if (deleteWithChildren && deleteWithChildren === "true") {
-        await Promise.all(
-          post.comments.map((comment: Schema.Types.ObjectId) =>
-            this.postModel.findByIdAndUpdate(
+        post.comments.map(
+          async (comment: Schema.Types.ObjectId) =>
+            await this.postModel.findByIdAndUpdate(
               comment,
               { deleted: true },
               { new: true }
             )
-          )
         );
       } else {
-        await Promise.all(
-          post.comments.map((comment: Schema.Types.ObjectId) =>
-            this.postModel.findByIdAndUpdate(
+        post.comments.map(
+          async (comment: Schema.Types.ObjectId) =>
+            await this.postModel.findByIdAndUpdate(
               comment,
               {
                 parentId: null,
               },
               { new: true }
             )
-          )
         );
       }
 

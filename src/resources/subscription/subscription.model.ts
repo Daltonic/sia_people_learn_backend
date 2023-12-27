@@ -6,8 +6,7 @@ export interface ISubscription extends Document {
   productType: "Course" | "Academy";
   productId: Schema.Types.ObjectId;
   productModelType: "Course" | "Academy";
-  paymentFrequency: number;
-  paymentFrequencyType: string;
+  paymentFrequency: string;
   orderId: Schema.Types.ObjectId;
   amount: number;
   currentCourse?: Schema.Types.ObjectId | null;
@@ -22,8 +21,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
   productType: { type: String, enum: ["Course", "Academy"], required: true },
   productId: { type: Schema.Types.ObjectId, refPath: "productModelType" },
   productModelType: { type: String, enum: ["Course", "Academy"] },
-  paymentFrequency: { type: Number, required: true },
-  paymentFrequencyType: {
+  paymentFrequency: {
     type: String,
     enum: ["Month", "Year"],
     required: true,

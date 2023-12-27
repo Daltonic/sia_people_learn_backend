@@ -6,22 +6,20 @@ export const createCourseSchema = object({
     price: number({ required_error: "Course Price is required" }).positive(),
     description: string({ required_error: "Course Description is required" }),
     overview: string({ required_error: "Course Overview is required" }),
-    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"], {
-      required_error: "Course Difficulty is required",
-    }),
+    difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
+    type: z.enum(["Course", "Book"], { required_error: "type is required" }),
     tags: string().array().optional(),
     imageUrl: string().optional(),
-    requirements: string({
-      required_error: "Course Requirements is required",
-    }).array(),
-    highlights: string({
-      required_error: "Course Highlights is required",
-    }).array(),
+    requirements: string().array().optional(),
+    highlights: string().array().optional(),
   }),
 });
 
 export const updateCourseSchema = object({
   body: object({
+    type: z.enum(["Course", "Book"], {
+      required_error: "Course type is required",
+    }),
     name: string().optional(),
     price: number().positive().optional(),
     description: string().optional(),
@@ -72,5 +70,19 @@ export const fetchCoursesSchema = object({
     filter: z.enum(["newest", "oldest", "recommended"]).optional(),
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
     deleted: z.enum(["true", "false"]).optional(),
+  }),
+});
+
+const orderLessonObject = object({
+  lessonId: string({ required_error: "Lesson ID is required" }),
+  order: number({ required_error: "Lesson Order is required" }).min(0),
+});
+
+export const orderLessonsSchema = object({
+  body: object({
+    lessonsOrder: orderLessonObject.array(),
+  }),
+  params: object({
+    courseId: string({ required_error: "Course ID is required" }),
   }),
 });
