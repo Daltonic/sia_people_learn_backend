@@ -289,7 +289,7 @@ class PostService {
       }
 
       // Ensure that this is either an admin or the post creator
-      if (user.userType !== "admin" && userId !== String(post.userId)) {
+      if (userId !== String(post.userId)) {
         throw new Error("You are not permitted to delete this Post");
       }
 
