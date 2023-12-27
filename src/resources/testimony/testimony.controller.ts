@@ -48,7 +48,7 @@ class TestimonyController implements Controller {
     );
 
     this.router.delete(
-      `${this.path}/:testimonyId`,
+      `${this.path}/delete/:testimonyId`,
       [loggedIn, validateResource(deleteTestimonySchema)],
       this.deleteTestimony
     );

@@ -64,7 +64,7 @@ class PostController implements Controller {
     );
 
     this.router.delete(
-      `${this.path}/:postId`,
+      `${this.path}/delete/:postId`,
       [loggedIn, validateResource(deletePostSchema)],
       this.deletePost
     );
