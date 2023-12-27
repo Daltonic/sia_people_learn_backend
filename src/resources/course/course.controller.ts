@@ -7,6 +7,7 @@ import {
   DeleteCourseInterface,
   FetchCourseInterface,
   FetchCoursesInterface,
+  OrderLessonInterface,
   SubmitCourseInterface,
   UpdateCourseInterface,
 } from "@/resources/course/course.interface";
@@ -17,6 +18,7 @@ import {
   createCourseSchema,
   deleteCourseSchema,
   fetchCoursesSchema,
+  orderLessonsSchema,
   submitCourseSchema,
   updateCourseSchema,
 } from "@/resources/course/course.validation";
@@ -77,6 +79,12 @@ class CourseController implements Controller {
       `${this.path}/approve/:courseId`,
       [isAdmin, validateResource(approveCourseSchema)],
       this.approveCourse
+    );
+
+    this.router.put(
+      `${this.path}/orderLessons/:courseId`,
+      [loggedIn, validateResource(orderLessonsSchema)],
+      this.orderLessons
     );
   }
 
@@ -219,6 +227,35 @@ class CourseController implements Controller {
       res.status(StatusCodes.OK).send(message);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private orderLessons = async (
+    req: Request<
+      OrderLessonInterface["params"],
+      {},
+      OrderLessonInterface["body"]
+    >,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const { courseId } = req.params;
+    const { _id: userId } = res.locals.user;
+    const lessonData = req.body;
+
+    try {
+      const message = await this.courseService.orderLessons(
+        courseId,
+        lessonData,
+        userId
+      );
+      res.status(StatusCodes.OK).send(message);
+    } catch (e: any) {
+      if (e.message === "Only course owner can order lessons") {
+        next(new HttpException(StatusCodes.UNAUTHORIZED, e.message));
+      } else {
+        next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+      }
     }
   };
 }

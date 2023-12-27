@@ -36,6 +36,7 @@ export const fetchPostsSchema = object({
     searchQuery: string().optional(),
     filter: z.enum(["newest", "oldest", "recommended"]).optional(),
     deleted: z.enum(["true", "false"]).optional(),
+    parentId: string().optional(),
   }),
 });
 

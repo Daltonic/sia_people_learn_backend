@@ -34,7 +34,6 @@ export const updateAcademySchema = object({
     highlights: string().array().optional(),
     requirements: string().array().optional(),
     tags: string().array().optional(),
-    courses: string().array().optional(),
   }),
   params: object({
     academyId: string({ required_error: "Academy ID is required." }),
@@ -73,5 +72,19 @@ export const fetchAcademiesSchema = object({
     filter: z.enum(["newest", "oldest", "recommended"]).optional(),
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
     deleted: z.enum(["true", "false"]).optional(),
+  }),
+});
+
+export const addCourseSchema = object({
+  query: object({
+    academyId: string({ required_error: "Academy Id is required" }),
+    courseId: string({ required_error: "Course Id is required" }),
+  }),
+});
+
+export const removeCourseSchema = object({
+  query: object({
+    academyId: string({ required_error: "Academy Id is required" }),
+    courseId: string({ required_error: "Course Id is required" }),
   }),
 });

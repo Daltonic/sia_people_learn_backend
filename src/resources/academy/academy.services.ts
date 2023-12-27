@@ -119,7 +119,6 @@ class AcademyService {
       highlights,
       requirements,
       tags,
-      courses,
     } = academyInput;
     try {
       const academy = await this.academyModel.findById(academyId);
@@ -158,22 +157,6 @@ class AcademyService {
         }
       }
 
-      // The courses are to be overwritten. Hence, we expect all the courses, including the original courses
-      const coursesNotFound = [];
-      const coursesFound = [];
-      let cumulativeDuration = 0;
-      if (courses) {
-        for (let course of courses) {
-          const _course = await this.courseModel.findById(course);
-          if (_course && String(_course.userId) === userId) {
-            coursesFound.push(_course._id);
-            cumulativeDuration += _course.duration;
-          } else {
-            coursesNotFound.push(course);
-          }
-        }
-      }
-
       // Update the document
       const updatedAcademy = await this.academyModel.findByIdAndUpdate(
         academyId,
@@ -186,14 +169,12 @@ class AcademyService {
           difficulty: difficulty || academy.difficulty,
           highlights: highlights || academy.highlights,
           requirements: requirements || academy.requirements,
-          duration: cumulativeDuration,
-          courses: coursesFound,
           tags: tagDocumentIds,
         },
         { new: true }
       );
 
-      return { updatedAcademy, coursesNotFound };
+      return updatedAcademy!;
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error updating Academy");
@@ -268,7 +249,6 @@ class AcademyService {
           query.deleted = false;
         } else {
           if (deleted) {
-            console.log(deleted);
             query.deleted = deleted === "true";
           }
         }
@@ -299,30 +279,22 @@ class AcademyService {
       const academies = await this.academyModel
         .find(query)
         .populate({
-          path: "courses",
-          model: this.courseModel,
-          select: "_id name",
-          strictPopulate: false,
-        })
-        .populate({
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
         })
-        .populate({
-          path: "tags",
-          model: this.tagModel,
-          select: "_id name",
-          strictPopulate: false,
-        })
         .skip(skipAmount)
         .limit(numericPageSize)
-        .sort(sortOptions);
+        .sort(sortOptions)
+        .select(
+          "name description overview imageUrl price difficulty duration rating reviewsCount highlights requirements approved"
+        );
 
       // Find out if there is a next page
       const totalAcademies = await this.academyModel.countDocuments(query);
       const isNext = totalAcademies > skipAmount + academies.length;
-      return { academies, isNext };
+      const numOfPages = Math.ceil(totalAcademies / numericPageSize);
+      return { academies, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching Academies");
@@ -374,6 +346,85 @@ class AcademyService {
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error approving academy");
+    }
+  }
+
+  public async addCourse(
+    academyId: string,
+    courseId: string,
+    userId: string
+  ): Promise<object | Error> {
+    try {
+      const academy = await this.academyModel.findById(academyId);
+      if (!academy) {
+        throw new Error("Academy not found");
+      }
+
+      if (String(academy.userId) !== userId) {
+        throw new Error(
+          "Only academy instructor can add a course to this academy"
+        );
+      }
+
+      const course = await this.courseModel.findById(courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      if (String(course.userId) !== userId) {
+        throw new Error(
+          "Only course instructor can add this course to an academy"
+        );
+      }
+
+      const updatedAcademy = await this.academyModel.findByIdAndUpdate(
+        { _id: academyId },
+        { $push: { courses: course._id }, $inc: { duration: course.duration } },
+        { new: true }
+      );
+
+      return updatedAcademy!;
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error adding course");
+    }
+  }
+
+  public async removeCourse(
+    academyId: string,
+    courseId: string,
+    userId: string
+  ): Promise<object | Error> {
+    try {
+      const academy = await this.academyModel.findById(academyId);
+      if (!academy) {
+        throw new Error("Academy not found");
+      }
+
+      if (String(academy.userId) !== userId) {
+        throw new Error(
+          "Only academy instructor can remove a course to this academy"
+        );
+      }
+
+      const course = await this.courseModel.findById(courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      const updatedAcademy = await this.academyModel.findByIdAndUpdate(
+        { _id: academyId },
+        {
+          $pull: { courses: course._id },
+          $inc: { duration: -1 * course.duration },
+        },
+        { new: true }
+      );
+
+      return updatedAcademy!;
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error adding course");
     }
   }
 
