@@ -4,7 +4,7 @@ import { Document, Schema, model } from "mongoose";
 export interface IPromo extends Document {
   code: string;
   percentage: Number;
-  promoType: "SiteWidePromo" | "InstructorPromo" | "ManualSalesPromo";
+  promoType: "SiteWidePromo";
   validated: boolean;
   userId: Schema.Types.ObjectId;
   createdAt: Date;
@@ -17,8 +17,7 @@ const PromoSchema = new Schema<IPromo>(
     percentage: { type: Number, required: true },
     promoType: {
       type: String,
-      enum: ["SiteWidePromo", "InstructorPromo", "ManualSalesPromo"],
-      required: true,
+      default: "SiteWidePromo",
     },
     validated: { type: Boolean, default: false },
     userId: { type: Schema.Types.ObjectId, ref: "User" },

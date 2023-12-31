@@ -1,4 +1,4 @@
-import { number, object, string, z } from "zod";
+import { object, string, z } from "zod";
 
 export const createSubsciptionSchema = object({
   body: object({

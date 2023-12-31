@@ -50,18 +50,21 @@ class SubscriptionService {
       }
 
       // Ensure that the product exist
+      let productAmount: Number;
       switch (productType) {
         case "Academy":
           const academy = await this.academyModel.findById(productId);
           if (!academy) {
             throw new Error("Academy not found");
           }
+          productAmount = academy.price;
           break;
         case "Course":
           const course = await this.courseModel.findById(productId);
           if (!course) {
             throw new Error("Course not found");
           }
+          productAmount = course.price;
           break;
       }
 
@@ -72,22 +75,9 @@ class SubscriptionService {
         productType: productType,
         productId,
         expiresAt,
-        amount: order ? order.grandTotal : 0,
+        amount: productAmount,
         productModelType: productType,
       });
-
-      // Save the product in the user's academy or course collection
-      if (productType === "Academy") {
-        await this.userModel.findByIdAndUpdate(
-          userId,
-          { $push: { academies: productId } },
-          { new: true }
-        );
-      } else {
-        await this.userModel.findByIdAndUpdate(userId, {
-          $push: { courses: productId },
-        });
-      }
 
       await this.userModel.findByIdAndUpdate(
         userId,
