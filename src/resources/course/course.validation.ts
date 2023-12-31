@@ -73,14 +73,9 @@ export const fetchCoursesSchema = object({
   }),
 });
 
-const orderLessonObject = object({
-  lessonId: string({ required_error: "Lesson ID is required" }),
-  order: number({ required_error: "Lesson Order is required" }).min(0),
-});
-
 export const orderLessonsSchema = object({
   body: object({
-    lessonsOrder: orderLessonObject.array(),
+    lessonsIds: string({ required_error: "Lesson IDs are required" }).array(),
   }),
   params: object({
     courseId: string({ required_error: "Course ID is required" }),

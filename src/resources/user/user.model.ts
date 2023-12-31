@@ -22,6 +22,7 @@ export interface IUser extends Document {
   academies: Schema.Types.ObjectId[];
   reviewedCourses: Schema.Types.ObjectId[];
   reviewedAcademies: Schema.Types.ObjectId[];
+  subscriptions: Schema.Types.ObjectId[];
   validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -44,6 +45,7 @@ const UserSchema = new Schema<IUser>(
     academies: [{ type: Schema.Types.ObjectId, ref: "Academy" }],
     reviewedCourses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
     reviewedAcademies: [{ type: Schema.Types.ObjectId, ref: "Academy" }],
+    subscriptions: [{ type: Schema.Types.ObjectId, ref: "Subscription" }],
     recoveryCode: { type: String },
     rememberMe: { type: Boolean, default: false },
     lastLogin: { type: Date },

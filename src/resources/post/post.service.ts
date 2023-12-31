@@ -42,6 +42,7 @@ class PostService {
         userId,
         parentId: parentId || null,
         imageUrl: imageUrl || null,
+        published: parentId ? true : false,
       });
 
       return post;
