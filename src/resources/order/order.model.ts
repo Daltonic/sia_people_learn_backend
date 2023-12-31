@@ -9,6 +9,7 @@ export interface IOrder extends Document {
   transactionRef: string;
   paymentType: "Stripe" | "Crypto";
   grandTotal: number;
+  subscriptions: Schema.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,9 @@ const OrderSchema = new Schema<IOrder>(
     total: { type: Number, required: true },
     transactionRef: { type: String, default: generateAlphanumeric(10) },
     paymentType: { type: String, enum: ["Stripe", "Crypto"], required: true },
+    subscriptions: [
+      { type: Schema.Types.ObjectId, ref: "Subscription", required: true },
+    ],
     grandTotal: { type: Number, required: true },
   },
   { timestamps: true }

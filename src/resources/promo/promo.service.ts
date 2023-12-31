@@ -11,7 +11,7 @@ class PromoService {
     promoInput: CreatePromoInterface,
     userId: string
   ): Promise<object | Error> {
-    const { percentage, promoType, code } = promoInput;
+    const { percentage, code } = promoInput;
 
     try {
       // Ensure that the user exists and that he has the permission to create this promo
@@ -20,19 +20,11 @@ class PromoService {
         throw new Error("User not found");
       }
 
-      if (
-        (promoType === "ManualSalesPromo" || promoType === "SiteWidePromo") &&
-        user.userType !== "admin"
-      ) {
-        throw new Error(`User is not permitted to create ${promoType}`);
-      }
-
       const promo = await this.promoModel.create({
         percentage,
-        promoType,
         userId,
         code,
-        validated: ["ManualSalesPromo", "SiteWidePromo"].includes(promoType),
+        validated: true,
       });
 
       return promo;

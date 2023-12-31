@@ -9,6 +9,9 @@ export const createOrderSchema = object({
     }),
     paymentType: z.enum(["Stripe", "Crypto"]),
     grandTotal: number({ required_error: "Order grand total is required." }),
+    subscriptions: string({
+      required_error: "Subscriptions IDs is required",
+    }).array(),
   }),
 });
 

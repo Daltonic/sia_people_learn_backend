@@ -287,7 +287,7 @@ class AcademyService {
         .limit(numericPageSize)
         .sort(sortOptions)
         .select(
-          "name description overview imageUrl price difficulty duration rating reviewsCount highlights requirements approved"
+          "name description overview imageUrl price difficulty duration rating reviewsCount highlights requirements approved deleted"
         );
 
       // Find out if there is a next page
