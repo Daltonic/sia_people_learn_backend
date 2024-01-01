@@ -16,7 +16,7 @@ export interface ILesson extends Document {
 
 const LessonSchema = new Schema<ILesson>(
   {
-    title: { type: String, required: true, unique: true },
+    title: { type: String, required: true },
     overview: { type: String, required: true },
     description: { type: String, required: true },
     duration: { type: Number, required: true },

@@ -7,23 +7,70 @@ import {
 import Order from "@/resources/order/order.model";
 import log from "@/utils/logger";
 import { FilterQuery, Schema } from "mongoose";
+import Subscription from "@/resources/subscription/subscription.model";
 
 class OrderService {
   private userModel = User;
   private promoModel = Promo;
   private orderModel = Order;
+  private subscriptionModel = Subscription;
 
   public async createOrder(
     orderInput: CreateOrderInterface,
     userId: string
   ): Promise<object | Error> {
-    const { promoId, total, transactionRef, paymentType, grandTotal } =
-      orderInput;
+    const {
+      promoId,
+      total,
+      transactionRef,
+      paymentType,
+      grandTotal,
+      subscriptions,
+    } = orderInput;
     try {
       // Verify that the user exists
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new Error("User not found");
+      }
+
+      const subscriptionsIds: string[] = [];
+      const subscribedCourses: string[] = [];
+      const subscribedAcademies: string[] = [];
+      // todo: optional. Validate if grandTotal matches what was passed from front-end
+      let computedTotal = 0;
+
+      for (const sub of subscriptions) {
+        const subscription = await this.subscriptionModel.findById(sub);
+        if (!subscription) {
+          throw new Error(`Subscription with ID: ${sub} does not exist`);
+        }
+
+        if (String(subscription.userId) !== userId) {
+          throw new Error(
+            `Subscription with ID: ${sub} does not belong to current user`
+          );
+        }
+
+        if (subscription.status === "Completed") {
+          throw new Error(`User already subscribed to ${sub}`);
+        }
+
+        if (subscription?.productType === "Academy") {
+          subscribedAcademies.push(String(subscription.productId));
+        }
+
+        if (subscription?.productType === "Course") {
+          subscribedCourses.push(String(subscription.productId));
+        }
+
+        subscriptionsIds.push(subscription._id);
+        computedTotal += subscription.amount;
+      }
+
+      // if gTotal does not equal grandTotal, log it for now
+      if (computedTotal !== total) {
+        log.info("Computed total is different from provided total");
       }
 
       // If there is a promoId, then verify that promo exists
@@ -48,7 +95,29 @@ class OrderService {
         paymentType,
         grandTotal,
         promoId: promoId || null,
+        subscriptions: subscriptionsIds,
       });
+
+      // Update the subscriptions
+      subscriptions.map(async (sub) => {
+        await this.subscriptionModel.findByIdAndUpdate(
+          sub,
+          { orderId: order._id, status: "Completed" },
+          { new: true }
+        );
+      });
+
+      // Update the subscribed courses and academies in the user model
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          $push: {
+            subscribedAcademies: { $each: subscribedAcademies },
+            subscribedCourses: { $each: subscribedCourses },
+          },
+        },
+        { new: true }
+      );
 
       return order;
     } catch (e: any) {
@@ -80,6 +149,11 @@ class OrderService {
           path: "promoId",
           model: this.promoModel,
           select: "code percentage promoType",
+        })
+        .populate({
+          path: "subscriptions",
+          model: this.subscriptionModel,
+          select: "productId productType status",
         });
       if (!order) {
         throw new Error("Order not found");
@@ -153,6 +227,11 @@ class OrderService {
           path: "promoId",
           model: this.promoModel,
           select: "code percentage promoType",
+        })
+        .populate({
+          path: "subscriptions",
+          model: this.subscriptionModel,
+          select: "productId productType status",
         })
         .skip(skipAmount)
         .limit(numericPageSize)

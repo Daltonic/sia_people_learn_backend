@@ -275,6 +275,7 @@ class CourseService {
         .populate({
           path: "lessons",
           model: this.lessonModel,
+          options: { sort: { order: 1 } },
           select: "_id title",
         })
         .populate({
@@ -369,7 +370,7 @@ class CourseService {
         .limit(numericPageSize)
         .sort(sortOptions)
         .select(
-          "name price description overview difficulty duration lessonsCount rating reviewsCount requirements highlights approved"
+          "name price description overview difficulty duration lessonsCount rating reviewsCount requirements highlights approved deleted"
         );
 
       // Find out if there is a next page
@@ -440,7 +441,7 @@ class CourseService {
     lessonsData: OrderLessonInterface["body"],
     userId: string
   ): Promise<string | Error> {
-    const { lessonsOrder } = lessonsData;
+    const { lessonsIds } = lessonsData;
 
     try {
       const course = await this.courseModel.findById(courseId);
@@ -452,10 +453,10 @@ class CourseService {
         throw new Error("Only course owner can order lessons");
       }
 
-      lessonsOrder.map(async (lesson) => {
+      lessonsIds.map(async (lessonId, index) => {
         await this.lessonModel.findByIdAndUpdate(
-          lesson.lessonId,
-          { order: lesson.order },
+          lessonId,
+          { order: index },
           { new: true }
         );
       });

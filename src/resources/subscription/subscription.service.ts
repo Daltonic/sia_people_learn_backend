@@ -40,51 +40,50 @@ class SubscriptionService {
       }
       let expiresAt: Date;
 
-      if (paymentFrequency === "month") {
+      if (paymentFrequency === "Month") {
         expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      } else {
+      } else if (paymentFrequency === "Year") {
         expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      } else {
+        // Expired 100 years from now
+        expiresAt = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
       }
 
       // Ensure that the product exist
+      let productAmount: Number;
       switch (productType) {
-        case "academy":
+        case "Academy":
           const academy = await this.academyModel.findById(productId);
           if (!academy) {
             throw new Error("Academy not found");
           }
+          productAmount = academy.price;
           break;
-        case "course":
+        case "Course":
           const course = await this.courseModel.findById(productId);
           if (!course) {
             throw new Error("Course not found");
           }
+          productAmount = course.price;
           break;
       }
 
       const subscription = await this.subscriptionModel.create({
         userId,
         orderId: orderId || null,
-        paymentFrequency: paymentFrequency === "month" ? "Month" : "Year",
-        productType: productType === "academy" ? "Academy" : "Course",
+        paymentFrequency: paymentFrequency,
+        productType: productType,
         productId,
         expiresAt,
-        amount: order ? order.grandTotal : 0,
-        productModelType: productType === "academy" ? "Academy" : "Course",
+        amount: productAmount,
+        productModelType: productType,
       });
 
-      // Save the product in the user's academy or course collection
-      if (productType === "academy") {
-        await this.userModel.findByIdAndUpdate(
-          userId,
-          { $push: { academies: productId } },
-          { new: true }
-        );
-      } else {
-        await this.userModel.findByIdAndUpdate(userId, {
-          $push: { courses: productId },
-        });
-      }
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { $push: { subscriptions: subscription._id } },
+        { new: true }
+      );
 
       return subscription;
     } catch (e: any) {
@@ -112,19 +111,11 @@ class SubscriptionService {
       }
 
       if (productType) {
-        if (productType === "academy") {
-          query.productType = "Academy";
-        } else {
-          query.productType = "Course";
-        }
+        query.productType = productType;
       }
 
       if (status) {
-        if (status === "completed") {
-          query.status = "Completed";
-        } else {
-          query.status = "Pending";
-        }
+        query.status = status;
       }
 
       // Define the sorting strategy
@@ -158,7 +149,7 @@ class SubscriptionService {
         })
         .populate({
           path: "productId",
-          select: "_id name difficulty overview description",
+          select: "_id name difficulty overview description type",
         })
         .populate({
           path: "orderId",
@@ -206,6 +197,12 @@ class SubscriptionService {
         throw new Error("User not permitted to delete this subscription");
       }
 
+      if (subscription.status === "Completed") {
+        throw new Error(
+          "This order has been completed and can no longer be deleted"
+        );
+      }
+
       if (subscription.productModelType === "Academy") {
         await this.userModel.findOneAndUpdate(
           { _id: userId },
@@ -221,6 +218,12 @@ class SubscriptionService {
       }
 
       await this.subscriptionModel.findByIdAndDelete(subscriptionId);
+
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { $pull: { subscriptions: subscription._id } },
+        { new: true }
+      );
 
       return "Subscription successfully deleted";
     } catch (e: any) {

@@ -34,7 +34,7 @@ class ReviewService {
           if (!academy) {
             throw new Error("Academy not found");
           }
-          if (!user.academies.includes(academy._id)) {
+          if (!user.subscribedAcademies.includes(academy._id)) {
             throw new Error("User not subscribed to this Academy");
           }
           // If the user has already reviewed this academy, then return
@@ -48,7 +48,7 @@ class ReviewService {
             throw new Error("Course not found");
           }
 
-          if (!user.courses?.includes(course._id)) {
+          if (!user.subscribedCourses?.includes(course._id)) {
             throw new Error("User not subscribed to this Course");
           }
 
@@ -134,6 +134,17 @@ class ReviewService {
         review.productId,
         review.productType
       );
+
+      // Remove the review from the user's record
+      if (review.productType === "Academy") {
+        await this.userModel.findByIdAndUpdate(userId, {
+          $pull: { reviewedAcademies: reviewId },
+        });
+      } else {
+        await this.userModel.findByIdAndUpdate(userId, {
+          $pull: { reviewedCourses: reviewId },
+        });
+      }
 
       return "Review successfully deleted";
     } catch (e: any) {
