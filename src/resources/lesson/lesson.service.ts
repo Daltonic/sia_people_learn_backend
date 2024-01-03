@@ -201,7 +201,9 @@ class LessonService {
   public async fetchLessons(courseId: string): Promise<object | Error> {
     try {
       // todo: Filtering and sorting features
-      const lessons = await this.lessonModel.find({ courseId });
+      const lessons = await this.lessonModel
+        .find({ courseId })
+        .sort({ order: 1 });
 
       return lessons;
     } catch (e: any) {
