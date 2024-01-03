@@ -9,12 +9,14 @@ import {
 import { log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
 import { FilterQuery } from "mongoose";
+import Review from "@/resources/review/review.model";
 
 class AcademyService {
   private userModel = User;
   private courseModel = Course;
   private academyModel = Academy;
   private tagModel = Tag;
+  private reviewModel = Review;
 
   public async createAcademy(
     academyInput: CreateAcademyInterface,
@@ -199,6 +201,17 @@ class AcademyService {
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
+        })
+        .populate({
+          path: "reviews",
+          model: this.reviewModel,
+          match: { deleted: false },
+          select: "starRating comment",
+          populate: {
+            path: "userId",
+            model: this.userModel,
+            select: "firstName lastName username",
+          },
         });
       if (!academy) {
         throw new Error("Academy not found");

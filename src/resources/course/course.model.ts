@@ -15,7 +15,8 @@ export interface ICourse extends Document {
   type: "Course" | "Book";
   deleted: boolean;
   rating?: number;
-  reviewsCount?: number | null;
+  reviews: Schema.Types.ObjectId[];
+  reviewsCount: number;
   tags: string[];
   requirements: string[];
   highlights: string[];
@@ -49,7 +50,8 @@ const CourseSchema = new Schema<ICourse>(
     highlights: [{ type: String }],
     requirements: [{ type: String }],
     rating: { type: Number },
-    reviewsCount: { type: Number, default: null },
+    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
+    reviewsCount: { type: Number, default: 0 },
     tags: [{ type: String }],
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     lessons: [{ type: Schema.Types.ObjectId, ref: "Lesson" }],

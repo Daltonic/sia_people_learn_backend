@@ -8,6 +8,7 @@ export interface IReview extends Document {
   starRating: number;
   comment: string;
   approved: boolean;
+  deleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const ReviewSchema = new Schema<IReview>(
     starRating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true },
     approved: { type: Boolean, default: false },
+    deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

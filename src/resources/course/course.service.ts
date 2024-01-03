@@ -10,12 +10,14 @@ import log from "@/utils/logger";
 import Tag from "@/resources/tag/tag.model";
 import Lesson from "@/resources/lesson/lesson.model";
 import { FilterQuery } from "mongoose";
+import Review from "@/resources/review/review.model";
 
 class CourseService {
   private userModel = User;
   private courseModel = Course;
   private tagModel = Tag;
   private lessonModel = Lesson;
+  private reviewModel = Review;
 
   public async createCourse(
     courseInput: CreateCourseInterface,
@@ -282,6 +284,17 @@ class CourseService {
           path: "userId",
           model: this.userModel,
           select: "firstName lastName username",
+        })
+        .populate({
+          path: "reviews",
+          model: this.reviewModel,
+          match: { deleted: false },
+          select: "starRating comment",
+          populate: {
+            path: "userId",
+            model: this.userModel,
+            select: "firstName lastName username",
+          },
         });
       if (!course) {
         throw new Error("Course not found");

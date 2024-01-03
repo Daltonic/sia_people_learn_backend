@@ -99,7 +99,7 @@ class ReviewService {
         throw new Error("Review not found");
       }
 
-      // Fetch the course or academy. That way we can ensure that current use is the course/academy instructor
+      // Fetch the course or academy. That way we can ensure that current user is the course/academy instructor
       if (review.productType === "Academy") {
         const academy = await this.academyModel.findById(review.productId);
         if (!academy) {
@@ -125,26 +125,8 @@ class ReviewService {
       }
 
       // Now the review can be deleted
-      await this.reviewModel.findByIdAndDelete(reviewId);
-
-      // Update the product rating to reflect the deletion of this rating
-      const updatedData = await this.calculateAvarageRating(review.productId);
-      await this.updateProductRating(
-        updatedData,
-        review.productId,
-        review.productType
-      );
-
-      // Remove the review from the user's record
-      if (review.productType === "Academy") {
-        await this.userModel.findByIdAndUpdate(userId, {
-          $pull: { reviewedAcademies: reviewId },
-        });
-      } else {
-        await this.userModel.findByIdAndUpdate(userId, {
-          $pull: { reviewedCourses: reviewId },
-        });
-      }
+      review.deleted = true;
+      await review.save();
 
       return "Review successfully deleted";
     } catch (e: any) {
@@ -281,7 +263,8 @@ class ReviewService {
       await this.updateProductRating(
         updateData,
         review.productId,
-        review.productType
+        review.productType,
+        reviewId
       );
 
       return "Rating has been successfully approved";
@@ -318,7 +301,8 @@ class ReviewService {
   private async updateProductRating(
     updateData: { _id: null; averageRating: number; reviewsCount: number },
     productId: Schema.Types.ObjectId,
-    productType: "Course" | "Academy"
+    productType: "Course" | "Academy",
+    reviewId: string
   ) {
     try {
       if (productType === "Academy") {
@@ -326,7 +310,8 @@ class ReviewService {
           { _id: productId },
           {
             rating: Math.ceil(updateData?.averageRating || 0),
-            reviewsCount: updateData?.reviewsCount || 0,
+            $push: { reviews: reviewId },
+            reviewsCount: updateData.reviewsCount,
           }
         );
       } else {
@@ -334,7 +319,8 @@ class ReviewService {
           { _id: productId },
           {
             rating: Math.ceil(updateData?.averageRating || 0),
-            reviewsCount: updateData?.reviewsCount || 0,
+            $push: { reviews: reviewId },
+            reviewsCount: updateData.reviewsCount,
           }
         );
       }
