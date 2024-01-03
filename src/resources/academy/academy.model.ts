@@ -14,7 +14,8 @@ export interface IAcademy extends Document {
   deleted: boolean;
   orderCount: number;
   rating?: number | null;
-  reviewsCount: number | null;
+  reviews: Schema.Types.ObjectId[];
+  reviewsCount: number;
   courses: Schema.Types.ObjectId[];
   highlights: string[];
   requirements: string[];
@@ -42,7 +43,8 @@ const AcademySchema = new Schema<IAcademy>(
     deleted: { type: Boolean, default: false },
     orderCount: { type: Number, default: 0 },
     rating: { type: Number, default: null },
-    reviewsCount: { type: Number, default: null },
+    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
+    reviewsCount: { type: Number, default: 0 },
     courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
     highlights: [{ type: String }],
     requirements: [{ type: String }],
