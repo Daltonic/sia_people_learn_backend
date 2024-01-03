@@ -3,12 +3,11 @@ import { number, object, string, z } from "zod";
 export const createOrderSchema = object({
   body: object({
     promoId: string().optional(),
-    total: number({ required_error: "Order total is required" }),
+    userId: string({ required_error: "UserId is required" }),
     transactionRef: string({
       required_error: "Transaction reference is required",
     }),
     paymentType: z.enum(["Stripe", "Crypto"]),
-    grandTotal: number({ required_error: "Order grand total is required." }),
     subscriptions: string({
       required_error: "Subscriptions IDs is required",
     }).array(),

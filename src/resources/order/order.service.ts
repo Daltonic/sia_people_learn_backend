@@ -16,17 +16,10 @@ class OrderService {
   private subscriptionModel = Subscription;
 
   public async createOrder(
-    orderInput: CreateOrderInterface,
-    userId: string
+    orderInput: CreateOrderInterface
   ): Promise<object | Error> {
-    const {
-      promoId,
-      total,
-      transactionRef,
-      paymentType,
-      grandTotal,
-      subscriptions,
-    } = orderInput;
+    const { promoId, transactionRef, paymentType, subscriptions, userId } =
+      orderInput;
     try {
       // Verify that the user exists
       const user = await this.userModel.findById(userId);
@@ -37,7 +30,7 @@ class OrderService {
       const subscriptionsIds: string[] = [];
       const subscribedCourses: string[] = [];
       const subscribedAcademies: string[] = [];
-      // todo: optional. Validate if grandTotal matches what was passed from front-end
+
       let computedTotal = 0;
 
       for (const sub of subscriptions) {
@@ -68,10 +61,7 @@ class OrderService {
         computedTotal += subscription.amount;
       }
 
-      // if gTotal does not equal grandTotal, log it for now
-      if (computedTotal !== total) {
-        log.info("Computed total is different from provided total");
-      }
+      let grandTotal = computedTotal;
 
       // If there is a promoId, then verify that promo exists
       if (promoId) {
@@ -81,16 +71,12 @@ class OrderService {
         }
 
         // Verify that the grandTotal is properly computed
-        const computedGrandTotal =
-          total * (1 - Number(promo.percentage) * 0.01);
-        if (computedGrandTotal !== grandTotal) {
-          log.info("Computed grandTotal is different from provided grandTotal");
-        }
+        grandTotal = computedTotal * (1 - Number(promo.percentage) * 0.01);
       }
 
       const order = await this.orderModel.create({
         userId,
-        total,
+        total: computedTotal,
         transactionRef,
         paymentType,
         grandTotal,

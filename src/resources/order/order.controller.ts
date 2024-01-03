@@ -26,7 +26,7 @@ class OrderController implements Controller {
   private initialiseRoutes() {
     this.router.post(
       `${this.path}/create`,
-      [loggedIn, validateResource(createOrderSchema)],
+      [validateResource(createOrderSchema)],
       this.createOrder
     );
 
@@ -45,9 +45,9 @@ class OrderController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     const orderInput = req.body;
-    const { _id: userId } = res.locals.user;
+
     try {
-      const order = await this.orderService.createOrder(orderInput, userId);
+      const order = await this.orderService.createOrder(orderInput);
       res.status(StatusCodes.CREATED).json(order);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
