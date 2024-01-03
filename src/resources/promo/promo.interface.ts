@@ -1,6 +1,7 @@
 import { TypeOf } from "zod";
 import {
   createPromoSchema,
+  fetchPromosSchema,
   invalidatePromoSchema,
   validatePromoSchema,
 } from "@/resources/promo/promo.validation";
@@ -12,3 +13,5 @@ export type ValidatePromoInterface = TypeOf<
 export type InvalidatePromoInterface = TypeOf<
   typeof invalidatePromoSchema
 >["params"];
+
+export type FetchPromosInterface = TypeOf<typeof fetchPromosSchema>["query"];
