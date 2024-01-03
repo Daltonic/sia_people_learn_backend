@@ -3,6 +3,7 @@ import { NextFunction, Request, Router, Response } from "express";
 import PromoService from "@/resources/promo/promo.service";
 import {
   CreatePromoInterface,
+  FetchPromosInterface,
   InvalidatePromoInterface,
   ValidatePromoInterface,
 } from "@/resources/promo/promo.interface";
@@ -16,6 +17,7 @@ import {
 } from "@/middlewares/index";
 import {
   createPromoSchema,
+  fetchPromosSchema,
   invalidatePromoSchema,
   validatePromoSchema,
 } from "@/resources/promo/promo.validation";
@@ -32,11 +34,15 @@ class PromoController implements Controller {
   private initialiseRoutes() {
     this.router.post(
       `${this.path}/create`,
-      [isAdminOrInstructor, validateResource(createPromoSchema)],
+      [isAdmin, validateResource(createPromoSchema)],
       this.createPromo
     );
 
-    this.router.get(`${this.path}`, loggedIn, this.fetchPromos);
+    this.router.get(
+      `${this.path}`,
+      [isAdmin, validateResource(fetchPromosSchema)],
+      this.fetchPromos
+    );
 
     this.router.put(
       `${this.path}/validate/:promoId`,
@@ -68,12 +74,13 @@ class PromoController implements Controller {
   };
 
   private fetchPromos = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchPromosInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
+    const queryOptions = req.query;
     try {
-      const promos = await this.promoService.fetchPromos();
+      const promos = await this.promoService.fetchPromos(queryOptions);
       res.status(StatusCodes.OK).json(promos);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

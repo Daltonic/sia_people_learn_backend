@@ -20,3 +20,12 @@ export const invalidatePromoSchema = object({
     promoId: string({ required_error: "Promo ID is required" }),
   }),
 });
+
+export const fetchPromosSchema = object({
+  query: object({
+    page: string().optional(),
+    pageSize: string().optional(),
+    filter: z.enum(["newest", "oldest"]).optional(),
+    validated: z.enum(["true", "false"]).optional(),
+  }),
+});
