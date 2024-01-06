@@ -8,7 +8,9 @@
     "start": "node dist/index.js",
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "build": "tsc",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "vercel-build": "npm run build",
+    "vercel-output-directory": "dist"
   },
   "keywords": [],
   "author": "",
