@@ -7,6 +7,7 @@ import compression from "compression";
 import passport from "passport";
 import { deserialiseUser, errorMiddleware } from "./middlewares";
 import "@/middlewares/passportStrategies";
+import { log } from "./utils";
 
 class App {
   private express: Application;
@@ -29,6 +30,7 @@ class App {
       mongoose.set("strictQuery", false);
       mongoose.connect(MONGO_URI, { autoIndex: true });
     }
+    log.info("Database connected");
   }
 
   private initialiseMiddlewares() {
