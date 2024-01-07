@@ -7,7 +7,7 @@ In December 2023, the SiaPeopleLearn project made substantial progress, includin
 - Translating the Figma design into frontend code using NextJs, Tailwind CSS, and Typescript
 - Open-sourcing the frontend code on GitHub and [Vercel](https://sia-people-learn-frontend.vercel.app/)
 - Developing 60% of the backend API services using NodeJs and Typescript
-- Open-sourcing the backend API services on GitHub
+- Open-sourcing the backend API services on GitHub and [Render](https://sia-people-learn-backend.onrender.com)
 
 These achievements marked the completion of the frontend development phase and the beginning of the backend integration stage.
 
