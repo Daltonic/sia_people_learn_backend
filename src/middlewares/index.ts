@@ -5,6 +5,7 @@ import isAdminOrInstructor from "./isAdminOrInstructor";
 import isInstructor from "./isInstructor";
 import loggedIn from "./loggedIn.middleware";
 import validateResource from "./validation.middleware";
+import allowCors from "./allowCors.middleware";
 
 export {
   deserialiseUser,
@@ -14,4 +15,5 @@ export {
   validateResource,
   isInstructor,
   isAdmin,
+  allowCors,
 };

@@ -6,7 +6,7 @@ import { filteredUser, log } from "@/utils/index";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
 import { loginSchema } from "@/resources/session/session.validation";
-import { loggedIn, validateResource } from "@/middlewares/index";
+import { loggedIn, validateResource, allowCors } from "@/middlewares/index";
 import { get } from "lodash";
 import passport, { session } from "passport";
 import { IUser } from "../user/user.model";
@@ -30,6 +30,7 @@ class SessionController implements Controller {
 
     this.router.get(
       `${this.path}/login/google`,
+      allowCors,
       passport.authenticate("google", {
         scope: ["profile", "email"],
         session: false,
@@ -44,6 +45,7 @@ class SessionController implements Controller {
 
     this.router.get(
       `${this.path}/login/github`,
+      allowCors,
       passport.authenticate("github", {
         scope: ["user:email"],
         session: false,
@@ -58,6 +60,7 @@ class SessionController implements Controller {
 
     this.router.get(
       `${this.path}/login/twitter`,
+      allowCors,
       passport.authenticate("twitter", { session: false })
     );
     this.router.get(
@@ -68,6 +71,7 @@ class SessionController implements Controller {
 
     this.router.get(
       `${this.path}/login/facebook`,
+      allowCors,
       passport.authenticate("facebook", {
         session: false,
       })
