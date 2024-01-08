@@ -45,6 +45,7 @@ class UserService {
 
       return "User successfully created. Check your email to verify your account";
     } catch (e: any) {
+      log.error(e.message);
       throw new Error(e.code === 11000 ? "Account already exists" : e.message);
     }
   }
