@@ -39,6 +39,7 @@ class SessionController implements Controller {
 
     this.router.get(
       `/auth/google/callback`,
+      allowCors,
       passport.authenticate("google", { session: false }),
       this.socialLoginSuccess
     );
@@ -109,12 +110,10 @@ class SessionController implements Controller {
     next: NextFunction
   ): Promise<Response | void> => {
     try {
-      console.log(req.user);
       const { user, accessToken } = req.user as any as {
         user: IUser;
         accessToken: string;
       };
-      console.log(user, accessToken);
 
       res.status(200).json({ user: filteredUser(user), accessToken });
     } catch (e: any) {
