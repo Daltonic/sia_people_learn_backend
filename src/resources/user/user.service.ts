@@ -11,6 +11,8 @@ import User from "./user.model";
 import argon2 from "argon2";
 import { nanoid } from "nanoid";
 import { generateAlphanumeric, log } from "@/utils/index";
+import sendEmail, { generateEmail } from "@/utils/mailer";
+import { passwordResetMail, verificationMail } from "@/utils/templates/mails";
 
 class UserService {
   private userModel = User;
@@ -39,11 +41,25 @@ class UserService {
       // Generate account verification link
       const verificationLink = `${process.env.ORIGIN}/api/v1/users/verify?verificationCode=${newUser.verificationCode}&userId=${newUser._id}`;
 
-      // todo: Add implementation for emailing verification code
-
+      const verifyAccountMail = await generateEmail(
+        {
+          name: newUser.firstName,
+          link: verificationLink,
+        },
+        verificationMail
+      );
+      const mailSendSuccess = await sendEmail(
+        newUser.email,
+        verifyAccountMail,
+        "Verify Your Account"
+      );
       log.info(verificationLink);
 
-      return "User successfully created. Check your email to verify your account";
+      if (mailSendSuccess) {
+        return "User successfully created. Check your email to verify your account";
+      } else {
+        return "Could not send verification mail";
+      }
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.code === 11000 ? "Account already exists" : e.message);
@@ -104,10 +120,26 @@ class UserService {
       const passwordResetLink = `${process.env.ORIGIN}/api/v1/users/resetPassword?passwordResetCode=${user.recoveryCode}&userId=${user._id}`;
 
       // todo: Add implementation for emailing verification code
+      const resetPasswordMail = await generateEmail(
+        {
+          name: user.firstName,
+          link: passwordResetLink,
+        },
+        passwordResetMail
+      );
+      const mailSendSuccess = await sendEmail(
+        user.email,
+        resetPasswordMail,
+        "Verify Your Account"
+      );
 
       log.info(passwordResetLink);
 
-      return `Please your email to reset your password`;
+      if (mailSendSuccess) {
+        return `Please visit your email to reset your password`;
+      } else {
+        return "Password reset mail could not be sent";
+      }
     } catch (e: any) {
       throw new Error(e.message);
     }
