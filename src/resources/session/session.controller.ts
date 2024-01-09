@@ -102,17 +102,7 @@ class SessionController implements Controller {
   ): Promise<Response | void> => {
     const loginInput = req.body;
 
-    const { user, accessToken } = req.user as any as {
-      user: IUser;
-      accessToken: string;
-    };
-
     try {
-      if (user && accessToken) {
-        res
-          .status(StatusCodes.OK)
-          .json({ user: filteredUser(user), accessToken });
-      }
       const data = await this.sessionService.login(loginInput);
       res.status(StatusCodes.OK).json(data);
     } catch (e: any) {
