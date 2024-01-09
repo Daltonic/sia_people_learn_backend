@@ -40,7 +40,7 @@ class SessionController implements Controller {
       `/auth/google/callback`,
       passport.authenticate("google", {
         session: false,
-        successRedirect: `http://localhost:3000`,
+        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
       }),
       this.socialLoginSuccess
     );
@@ -57,7 +57,7 @@ class SessionController implements Controller {
       `/auth/github/callback`,
       passport.authenticate("github", {
         session: false,
-        successRedirect: `http://localhost:3000`,
+        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
       }),
       this.socialLoginSuccess
     );
@@ -70,7 +70,7 @@ class SessionController implements Controller {
       "/auth/twitter/callback",
       passport.authenticate("twitter", {
         session: false,
-        successRedirect: `http://localhost:3000`,
+        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
       }),
       this.socialLoginSuccess
     );
@@ -85,7 +85,7 @@ class SessionController implements Controller {
       `/auth/facebook/callback`,
       passport.authenticate("facebook", {
         session: false,
-        successRedirect: `http://localhost:3000`,
+        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
       }),
       this.socialLoginSuccess
     );
