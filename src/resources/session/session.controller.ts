@@ -6,7 +6,7 @@ import { filteredUser, log } from "@/utils/index";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
 import { loginSchema } from "@/resources/session/session.validation";
-import { loggedIn, validateResource, allowCors } from "@/middlewares/index";
+import { loggedIn, validateResource } from "@/middlewares/index";
 import { get } from "lodash";
 import passport, { session } from "passport";
 import { IUser } from "../user/user.model";
@@ -30,7 +30,6 @@ class SessionController implements Controller {
 
     this.router.get(
       `${this.path}/login/google`,
-      allowCors,
       passport.authenticate("google", {
         scope: ["profile", "email"],
         session: false,
@@ -39,14 +38,15 @@ class SessionController implements Controller {
 
     this.router.get(
       `/auth/google/callback`,
-      allowCors,
-      passport.authenticate("google", { session: false }),
+      passport.authenticate("google", {
+        session: false,
+        successRedirect: `http://localhost:3000`,
+      }),
       this.socialLoginSuccess
     );
 
     this.router.get(
       `${this.path}/login/github`,
-      allowCors,
       passport.authenticate("github", {
         scope: ["user:email"],
         session: false,
@@ -55,31 +55,38 @@ class SessionController implements Controller {
 
     this.router.get(
       `/auth/github/callback`,
-      passport.authenticate("github", { session: false }),
+      passport.authenticate("github", {
+        session: false,
+        successRedirect: `http://localhost:3000`,
+      }),
       this.socialLoginSuccess
     );
 
     this.router.get(
       `${this.path}/login/twitter`,
-      allowCors,
       passport.authenticate("twitter", { session: false })
     );
     this.router.get(
       "/auth/twitter/callback",
-      passport.authenticate("twitter", { session: false }),
+      passport.authenticate("twitter", {
+        session: false,
+        successRedirect: `http://localhost:3000`,
+      }),
       this.socialLoginSuccess
     );
 
     this.router.get(
       `${this.path}/login/facebook`,
-      allowCors,
       passport.authenticate("facebook", {
         session: false,
       })
     );
     this.router.get(
       `/auth/facebook/callback`,
-      passport.authenticate("facebook", { session: false }),
+      passport.authenticate("facebook", {
+        session: false,
+        successRedirect: `http://localhost:3000`,
+      }),
       this.socialLoginSuccess
     );
 
@@ -95,7 +102,17 @@ class SessionController implements Controller {
   ): Promise<Response | void> => {
     const loginInput = req.body;
 
+    const { user, accessToken } = req.user as any as {
+      user: IUser;
+      accessToken: string;
+    };
+
     try {
+      if (user && accessToken) {
+        res
+          .status(StatusCodes.OK)
+          .json({ user: filteredUser(user), accessToken });
+      }
       const data = await this.sessionService.login(loginInput);
       res.status(StatusCodes.OK).json(data);
     } catch (e: any) {
@@ -114,10 +131,14 @@ class SessionController implements Controller {
         user: IUser;
         accessToken: string;
       };
+      console.log(user, accessToken);
 
-      res.header("Access-Control-Allow-Origin", "*");
+      res.json({ user: filteredUser(user), accessToken });
 
-      res.status(200).json({ user: filteredUser(user), accessToken });
+      res.writeHead(301, {
+        location: "http://localhost:3000/login",
+      });
+      res.end();
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
