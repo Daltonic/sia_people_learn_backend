@@ -34,7 +34,8 @@ class App {
   }
 
   private initialiseMiddlewares() {
-    this.express.use(helmet()), this.express.use(cors());
+    this.express.use(helmet());
+    this.express.use(cors());
     this.express.set("trust proxy", 1);
 
     this.express.use(express.json());
