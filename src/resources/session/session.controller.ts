@@ -115,6 +115,8 @@ class SessionController implements Controller {
         accessToken: string;
       };
 
+      res.header("Access-Control-Allow-Origin", "*");
+
       res.status(200).json({ user: filteredUser(user), accessToken });
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
