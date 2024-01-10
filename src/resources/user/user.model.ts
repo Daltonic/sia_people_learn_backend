@@ -25,6 +25,11 @@ export interface IUser extends Document {
   subscriptions: Schema.Types.ObjectId[];
   subscribedCourses: Schema.Types.ObjectId[];
   subscribedAcademies: Schema.Types.ObjectId[];
+  requests: Schema.Types.ObjectId[];
+  linkedInProfile?: string;
+  tutorialTitle?: string;
+  samplesLink?: string;
+  specialty?: string;
   validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -53,6 +58,11 @@ const UserSchema = new Schema<IUser>(
     recoveryCode: { type: String },
     rememberMe: { type: Boolean, default: false },
     lastLogin: { type: Date },
+    requests: [{ type: Schema.Types.ObjectId, ref: "Request" }],
+    linkedInProfile: { type: String },
+    tutorialTitle: { type: String },
+    samplesLink: { type: String },
+    specialty: { type: String },
   },
   { timestamps: true }
 );

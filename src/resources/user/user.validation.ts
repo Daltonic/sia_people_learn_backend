@@ -72,6 +72,10 @@ export const upgradeUserSchema = object({
     upgradeUserTo: z.enum(["instructor", "admin"], {
       required_error: "UpgradeUserTo is required",
     }),
+    requestId: string({ required_error: "Request Id is required" }),
+    status: z.enum(["approved", "rejected"], {
+      required_error: "Request status is required",
+    }),
   }),
 });
 
@@ -87,6 +91,10 @@ export const downgradeUserSchema = object({
 export const requestUserUpgradeSchema = object({
   body: object({
     upgradeUserTo: z.enum(["instructor", "admin"]),
+    specialty: string({ required_error: "Specialty is required" }),
+    linkedInProfile: string({ required_error: "LinkedIn profile required" }),
+    tutorialTitle: string({ required_error: "Tutorial title is required" }),
+    samplesLink: string({ required_error: "Samples tutorial link required" }),
   }),
 });
 
