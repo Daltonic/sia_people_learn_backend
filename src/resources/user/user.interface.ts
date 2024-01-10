@@ -1,8 +1,10 @@
 import { TypeOf } from "zod";
 import {
   downgradeUserSchema,
+  fetchUsersSchema,
   forgotPasswordSchema,
   registerSchema,
+  requestUserUpgradeSchema,
   resetPasswordSchema,
   updatePasswordSchema,
   upgradeUserSchema,
@@ -20,3 +22,7 @@ export type UpdatePasswordInterface = TypeOf<
 >["body"];
 export type UpgradeUserInterface = TypeOf<typeof upgradeUserSchema>["body"];
 export type DowngradeUserInterface = TypeOf<typeof downgradeUserSchema>["body"];
+export type RequestUserUpgradeInterface = TypeOf<
+  typeof requestUserUpgradeSchema
+>["body"];
+export type fetchUsersInterface = TypeOf<typeof fetchUsersSchema>["query"];

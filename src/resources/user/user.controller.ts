@@ -9,6 +9,8 @@ import {
   updatePasswordSchema,
   upgradeUserSchema,
   downgradeUserSchema,
+  requestUserUpgradeSchema,
+  fetchUsersSchema,
 } from "@/resources/user/user.validation";
 import {
   ForgotPasswordInterface,
@@ -18,6 +20,8 @@ import {
   UpdatePasswordInterface,
   UpgradeUserInterface,
   DowngradeUserInterface,
+  RequestUserUpgradeInterface,
+  fetchUsersInterface,
 } from "@/resources/user/user.interface";
 import { StatusCodes } from "http-status-codes";
 import HttpException from "@/utils/exceptions/HttpException";
@@ -73,6 +77,18 @@ class UserController implements Controller {
       `${this.path}/downgrade`,
       [isAdmin, validateResource(downgradeUserSchema)],
       this.downgradeUser
+    );
+
+    this.router.post(
+      `${this.path}/requestUpgrade`,
+      [loggedIn, validateResource(requestUserUpgradeSchema)],
+      this.requestUserUpgrade
+    );
+
+    this.router.get(
+      `${this.path}`,
+      [isAdmin, validateResource(fetchUsersSchema)],
+      this.fetchUsers
     );
   }
 
@@ -192,6 +208,39 @@ class UserController implements Controller {
     try {
       const message = await this.userService.downgradeUser(downgradeInput);
       res.status(StatusCodes.OK).send(message);
+    } catch (e: any) {
+      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private requestUserUpgrade = async (
+    req: Request<{}, {}, RequestUserUpgradeInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const requestInput = req.body;
+    const { _id: userId } = res.locals.user;
+    try {
+      const message = await this.userService.requestUserUpgrade(
+        requestInput,
+        userId
+      );
+      res.status(StatusCodes.OK).send(message);
+    } catch (e: any) {
+      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private fetchUsers = async (
+    req: Request<{}, {}, {}, fetchUsersInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<object | void> => {
+    const queryOptions = req.query;
+    const { _id: userId } = res.locals.user;
+    try {
+      const result = await this.userService.fetchUsers(queryOptions);
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
