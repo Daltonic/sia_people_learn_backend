@@ -6,13 +6,21 @@ import {
   UpdatePasswordInterface,
   UpgradeUserInterface,
   DowngradeUserInterface,
+  RequestUserUpgradeInterface,
+  fetchUsersInterface,
 } from "@/resources/user/user.interface";
 import User from "./user.model";
 import argon2 from "argon2";
 import { nanoid } from "nanoid";
 import { generateAlphanumeric, log } from "@/utils/index";
 import sendEmail, { generateEmail } from "@/utils/mailer";
-import { passwordResetMail, verificationMail } from "@/utils/templates/mails";
+import {
+  passwordResetMail,
+  upgradeRequestMail,
+  upgradeSuccessMail,
+  verificationMail,
+} from "@/utils/templates/mails";
+import { FilterQuery } from "mongoose";
 
 class UserService {
   private userModel = User;
@@ -119,7 +127,6 @@ class UserService {
 
       const passwordResetLink = `${process.env.ORIGIN}/api/v1/users/resetPassword?passwordResetCode=${user.recoveryCode}&userId=${user._id}`;
 
-      // todo: Add implementation for emailing verification code
       const resetPasswordMail = await generateEmail(
         {
           name: user.firstName,
@@ -222,7 +229,26 @@ class UserService {
       user.userType = upgradeUserTo;
       await user.save();
 
-      return `User has been successfully upgraded to an ${upgradeUserTo}`;
+      const userUpgradeSuccessMail = await generateEmail(
+        {
+          name: user.firstName,
+          upgradeType: upgradeUserTo,
+          link: process.env.SOCIAL_REDIRECT_URL,
+        },
+        upgradeSuccessMail
+      );
+
+      const mailSendSuccess = await sendEmail(
+        user.email,
+        userUpgradeSuccessMail,
+        "Request Approval"
+      );
+
+      if (mailSendSuccess) {
+        return `Your request has been successfully approved`;
+      } else {
+        return "Error sending success notification request";
+      }
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error upgrading user");
@@ -256,6 +282,113 @@ class UserService {
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error downgrading user");
+    }
+  }
+
+  public async requestUserUpgrade(
+    requestInput: RequestUserUpgradeInterface,
+    userId: string
+  ): Promise<string | Error> {
+    const { upgradeUserTo } = requestInput;
+    try {
+      // Confirm that the user exists and fetch some of the user's details
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Fetch the admins for the purpose of email notification
+      const admins = await this.userModel.find({ userType: "admin" });
+
+      if (admins.length === 0) {
+        throw new Error(
+          "There are currently no Admins to approve this request"
+        );
+      }
+
+      const emails: string[] = [];
+      for (let admin of admins) {
+        emails.push(admin.email);
+      }
+
+      const userUpgradeRequestMail = await generateEmail(
+        {
+          firstname: user.firstName,
+          lastname: user.lastName,
+          upgradeType: upgradeUserTo,
+          link: process.env.ADMIN_DASHBOARD_URL,
+        },
+        upgradeRequestMail
+      );
+
+      const mailSendSuccess = await sendEmail(
+        emails,
+        userUpgradeRequestMail,
+        "User Upgrade Request"
+      );
+
+      if (mailSendSuccess) {
+        return `Your request has been successfully sent`;
+      } else {
+        return "Error sending notification request";
+      }
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error sending request");
+    }
+  }
+
+  public async fetchUsers(
+    queryOptions: fetchUsersInterface
+  ): Promise<object | Error> {
+    const { page, pageSize, searchQuery, filter, userType } = queryOptions;
+    try {
+      const query: FilterQuery<typeof this.userModel> = {};
+      if (searchQuery) {
+        query.$or = [
+          { firstName: { $regex: new RegExp(searchQuery, "i") } },
+          { lastName: { $regex: new RegExp(searchQuery, "i") } },
+          { username: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (userType) {
+        query.userType = userType;
+      }
+
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const users = await this.userModel
+        .find(query)
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions)
+        .select("firstName lastName username imgUrl userType");
+
+      const totalUsers = await this.userModel.countDocuments(query);
+      const isNext = totalUsers > skipAmount + users.length;
+      const numOfPages = Math.ceil(totalUsers / numericPageSize);
+
+      return { users, isNext, numOfPages };
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error fetching users");
     }
   }
 }

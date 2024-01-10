@@ -83,3 +83,19 @@ export const downgradeUserSchema = object({
     }),
   }),
 });
+
+export const requestUserUpgradeSchema = object({
+  body: object({
+    upgradeUserTo: z.enum(["instructor", "admin"]),
+  }),
+});
+
+export const fetchUsersSchema = object({
+  query: object({
+    page: string().optional(),
+    pageSize: string().optional(),
+    searchQuery: string().optional(),
+    filter: z.enum(["newest", "oldest"]).optional(),
+    userType: z.enum(["admin", "instructor", "user"]).optional(),
+  }),
+});
