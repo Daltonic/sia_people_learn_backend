@@ -21,9 +21,11 @@ import {
   verificationMail,
 } from "@/utils/templates/mails";
 import { FilterQuery } from "mongoose";
+import Request from "@/resources/request/request.model";
 
 class UserService {
   private userModel = User;
+  private requestModel = Request;
 
   public async register(userInput: RegisterInterface): Promise<string | Error> {
     try {
@@ -214,7 +216,7 @@ class UserService {
   public async upgradeUser(
     upgradeInput: UpgradeUserInterface
   ): Promise<string | Error> {
-    const { userId, upgradeUserTo } = upgradeInput;
+    const { userId, upgradeUserTo, requestId, status } = upgradeInput;
     try {
       // Ensure that the user currently exists
       const user = await this.userModel.findById(userId);
@@ -226,6 +228,15 @@ class UserService {
         return `This user is already an ${upgradeUserTo}`;
       }
 
+      const request = await this.requestModel.findById(requestId);
+      if (!request) {
+        throw new Error("Request not found");
+      }
+
+      // Update the request
+      request.status = status;
+      await request.save();
+
       user.userType = upgradeUserTo;
       await user.save();
 
@@ -234,6 +245,7 @@ class UserService {
           name: user.firstName,
           upgradeType: upgradeUserTo,
           link: process.env.SOCIAL_REDIRECT_URL,
+          status,
         },
         upgradeSuccessMail
       );
@@ -289,13 +301,43 @@ class UserService {
     requestInput: RequestUserUpgradeInterface,
     userId: string
   ): Promise<string | Error> {
-    const { upgradeUserTo } = requestInput;
+    const {
+      upgradeUserTo,
+      specialty,
+      linkedInProfile,
+      tutorialTitle,
+      samplesLink,
+    } = requestInput;
     try {
       // Confirm that the user exists and fetch some of the user's details
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new Error("User not found");
       }
+
+      if (user.userType === upgradeUserTo) {
+        return `User is already an ${upgradeUserTo}`;
+      }
+
+      // create the request
+      const newRequest = await this.requestModel.create({
+        userId,
+        requestType: "UserUpgradeRequest",
+        status: "pending",
+      });
+
+      // Update the user object
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          specialty,
+          linkedInProfile,
+          tutorialTitle,
+          samplesLink,
+          $push: { requests: newRequest._id },
+        },
+        { new: true }
+      );
 
       // Fetch the admins for the purpose of email notification
       const admins = await this.userModel.find({ userType: "admin" });
@@ -317,6 +359,10 @@ class UserService {
           lastname: user.lastName,
           upgradeType: upgradeUserTo,
           link: process.env.ADMIN_DASHBOARD_URL,
+          specialty,
+          linkedInProfile,
+          tutorialTitle,
+          samplesLink,
         },
         upgradeRequestMail
       );
@@ -376,10 +422,16 @@ class UserService {
 
       const users = await this.userModel
         .find(query)
+        .populate({
+          path: "requests",
+          model: this.requestModel,
+          match: { status: "pending" },
+          options: { sort: { createdAt: -1 }, limit: 1 },
+        })
         .skip(skipAmount)
         .limit(numericPageSize)
         .sort(sortOptions)
-        .select("firstName lastName username imgUrl userType");
+        .select("firstName lastName username imgUrl userType requests");
 
       const totalUsers = await this.userModel.countDocuments(query);
       const isNext = totalUsers > skipAmount + users.length;
