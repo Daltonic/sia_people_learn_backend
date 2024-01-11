@@ -412,7 +412,7 @@ class UserService {
           sortOptions = { createdAt: 1 };
           break;
         default:
-          sortOptions = { createdAt: -1 };
+          sortOptions = { updatedAt: -1 };
           break;
       }
 
@@ -428,6 +428,7 @@ class UserService {
           model: this.requestModel,
           match: { status: "pending" },
           options: { sort: { createdAt: -1 }, limit: 1 },
+          select: "_id requestType status",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
