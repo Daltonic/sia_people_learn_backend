@@ -225,7 +225,7 @@ class UserController implements Controller {
         requestInput,
         userId
       );
-      res.status(StatusCodes.OK).send(message);
+      res.status(StatusCodes.OK).json({ msg: message });
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
