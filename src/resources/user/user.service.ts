@@ -308,6 +308,7 @@ class UserService {
       tutorialTitle,
       samplesLink,
     } = requestInput;
+
     try {
       // Confirm that the user exists and fetch some of the user's details
       const user = await this.userModel.findById(userId);
