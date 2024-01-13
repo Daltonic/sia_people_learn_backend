@@ -11,6 +11,11 @@ import Tag from "@/resources/tag/tag.model";
 import Lesson from "@/resources/lesson/lesson.model";
 import { FilterQuery } from "mongoose";
 import Review from "@/resources/review/review.model";
+import sendEmail, { generateEmail } from "@/utils/mailer";
+import {
+  productApprovalFeedback,
+  productApprovalRequestMail,
+} from "@/utils/templates/mails";
 
 class CourseService {
   private userModel = User;
@@ -409,6 +414,11 @@ class CourseService {
         throw new Error("Course not found");
       }
 
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       if (String(course.userId) !== userId) {
         throw new Error("User not authorised");
       }
@@ -420,6 +430,44 @@ class CourseService {
       course.submitted = submitted;
 
       await course.save();
+
+      // Notify the admin
+      // Fetch the admins for the purpose of email notification
+      const admins = await this.userModel.find({ userType: "admin" });
+
+      if (admins.length === 0) {
+        throw new Error(
+          "There are currently no Admins to approve this request"
+        );
+      }
+
+      const emails: string[] = [];
+      for (let admin of admins) {
+        emails.push(admin.email);
+      }
+
+      const productApprovalMail = await generateEmail(
+        {
+          firstname: user.firstName,
+          lastname: user.lastName,
+          productType: course.type,
+          title: course.name,
+          link: process.env.SOCIAL_REDIRECT_URL,
+        },
+        productApprovalRequestMail
+      );
+
+      const mailSendSuccess = await sendEmail(
+        emails,
+        productApprovalMail,
+        "Product Approval Request"
+      );
+
+      if (mailSendSuccess) {
+        log.info("Approval mail successfully sent");
+      } else {
+        log.info("Approval mail could not be sent");
+      }
 
       return "Course has been submitted";
     } catch (e: any) {
@@ -442,7 +490,33 @@ class CourseService {
       course.approved = true;
       await course.save();
 
-      return "Course has been approved";
+      const user = await this.userModel.findById(String(course.userId));
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const userUpgradeSuccessMail = await generateEmail(
+        {
+          name: user.firstName,
+          productType: course.type,
+          title: course.name,
+          link: process.env.SOCIAL_REDIRECT_URL,
+          status: course.approved ? "approved" : "rejected",
+        },
+        productApprovalFeedback
+      );
+
+      const mailSendSuccess = await sendEmail(
+        user.email,
+        userUpgradeSuccessMail,
+        "Product Approval Feedback"
+      );
+
+      if (mailSendSuccess) {
+        return `Request approval mail successfully sent`;
+      } else {
+        return "Error sending success notification request";
+      }
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error submitting Course");

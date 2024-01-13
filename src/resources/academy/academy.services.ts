@@ -10,6 +10,11 @@ import { log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
 import { FilterQuery } from "mongoose";
 import Review from "@/resources/review/review.model";
+import sendEmail, { generateEmail } from "@/utils/mailer";
+import {
+  productApprovalFeedback,
+  productApprovalRequestMail,
+} from "@/utils/templates/mails";
 
 class AcademyService {
   private userModel = User;
@@ -324,6 +329,11 @@ class AcademyService {
         throw new Error("Academy not found");
       }
 
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       if (String(academy.userId) !== userId) {
         throw new Error("User not authorised");
       }
@@ -334,6 +344,43 @@ class AcademyService {
 
       academy.submitted = true;
       await academy.save();
+
+      // Fetch the admins for the purpose of email notification
+      const admins = await this.userModel.find({ userType: "admin" });
+
+      if (admins.length === 0) {
+        throw new Error(
+          "There are currently no Admins to approve this request"
+        );
+      }
+
+      const emails: string[] = [];
+      for (let admin of admins) {
+        emails.push(admin.email);
+      }
+
+      const productApprovalMail = await generateEmail(
+        {
+          firstname: user.firstName,
+          lastname: user.lastName,
+          productType: "Academy",
+          title: academy.name,
+          link: process.env.SOCIAL_REDIRECT_URL,
+        },
+        productApprovalRequestMail
+      );
+
+      const mailSendSuccess = await sendEmail(
+        emails,
+        productApprovalMail,
+        "Product Approval Request"
+      );
+
+      if (mailSendSuccess) {
+        log.info("Approval mail successfully sent");
+      } else {
+        log.info("Approval mail could not be sent");
+      }
 
       return "Academy has been successfully submitted for approval";
     } catch (e: any) {
@@ -355,7 +402,34 @@ class AcademyService {
 
       academy.approved = true;
       await academy.save();
-      return "Academy has been approved.";
+
+      const user = await this.userModel.findById(String(academy.userId));
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const productApprovalMail = await generateEmail(
+        {
+          name: user.firstName,
+          productType: "Academy",
+          title: academy.name,
+          link: process.env.SOCIAL_REDIRECT_URL,
+          status: academy.approved ? "approved" : "rejected",
+        },
+        productApprovalFeedback
+      );
+
+      const mailSendSuccess = await sendEmail(
+        user.email,
+        productApprovalMail,
+        "Product Approval Feedback"
+      );
+
+      if (mailSendSuccess) {
+        return `Request approval mail successfully sent`;
+      } else {
+        return "Error sending success notification request";
+      }
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error approving academy");
