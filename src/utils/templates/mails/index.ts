@@ -4,3 +4,4 @@ export const upgradeRequestMail = "user_upgrade_request.html";
 export const upgradeSuccessMail = "user_upgrade_success.html";
 export const productApprovalRequestMail = "product_approval_request.html";
 export const productApprovalFeedback = "product_approval_feedback.html";
+export const productDeletionFeedback = "product_deletion_feedback.html";

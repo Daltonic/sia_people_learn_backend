@@ -59,7 +59,7 @@ class CourseController implements Controller {
 
     this.router.get(
       `${this.path}/:courseId`,
-      [validateResource(deleteCourseSchema)],
+      [validateResource(fetchCoursesSchema)],
       this.fetchCourse
     );
 

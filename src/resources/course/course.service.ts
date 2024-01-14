@@ -9,7 +9,7 @@ import {
 import log from "@/utils/logger";
 import Tag from "@/resources/tag/tag.model";
 import Lesson from "@/resources/lesson/lesson.model";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 import Review from "@/resources/review/review.model";
 import sendEmail, { generateEmail } from "@/utils/mailer";
 import {
@@ -288,7 +288,7 @@ class CourseService {
         .populate({
           path: "userId",
           model: this.userModel,
-          select: "firstName lastName username",
+          select: "firstName lastName username imgUrl",
         })
         .populate({
           path: "reviews",
@@ -316,8 +316,16 @@ class CourseService {
     queryOptions: FetchCoursesInterface,
     userId: string
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, difficulty, deleted } =
-      queryOptions;
+    const {
+      page,
+      pageSize,
+      searchQuery,
+      filter,
+      difficulty,
+      deleted,
+      instructor,
+      type,
+    } = queryOptions;
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.courseModel> = {};
@@ -334,6 +342,14 @@ class CourseService {
         query.difficulty = difficulty;
       }
 
+      if (instructor) {
+        query.userId = new Types.ObjectId(instructor);
+      }
+
+      if (type) {
+        query.type = type;
+      }
+
       // Non admins can only view approved and non-deleted courses
       // Admin can view both approved and unapproved courses. They can also view deleted academies and filter by deleted
       if (!userId) {
@@ -345,8 +361,10 @@ class CourseService {
           throw new Error("User not found");
         }
 
-        if (user.userType !== "admin") {
+        if (user.userType === "user") {
           query.approved = true;
+          query.deleted = false;
+        } else if (user.userType === "instructor") {
           query.deleted = false;
         } else {
           if (deleted) {
