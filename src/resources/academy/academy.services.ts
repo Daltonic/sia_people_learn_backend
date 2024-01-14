@@ -8,12 +8,13 @@ import {
 } from "@/resources/academy/academy.interface";
 import { log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 import Review from "@/resources/review/review.model";
 import sendEmail, { generateEmail } from "@/utils/mailer";
 import {
   productApprovalFeedback,
   productApprovalRequestMail,
+  productDeletionFeedback,
 } from "@/utils/templates/mails";
 
 class AcademyService {
@@ -215,7 +216,7 @@ class AcademyService {
           populate: {
             path: "userId",
             model: this.userModel,
-            select: "firstName lastName username",
+            select: "firstName lastName username imgUrl",
           },
         });
       if (!academy) {
@@ -233,8 +234,15 @@ class AcademyService {
     queryOptions: FetchAcademiesInterface,
     userId: string
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, difficulty, deleted } =
-      queryOptions;
+    const {
+      page,
+      pageSize,
+      searchQuery,
+      filter,
+      difficulty,
+      deleted,
+      instructor,
+    } = queryOptions;
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.academyModel> = {};
@@ -251,6 +259,10 @@ class AcademyService {
         query.difficulty = difficulty;
       }
 
+      if (instructor) {
+        query.userId = new Types.ObjectId(instructor);
+      }
+
       // Non admins can only view approved and non-deleted academies
       // Admin can view both approved and unapproved academies. They can also view deleted academies and filter by deleted
       if (!userId) {
@@ -258,12 +270,13 @@ class AcademyService {
         query.deleted = false;
       } else {
         const user = await this.userModel.findById(userId);
-
         if (!user) {
           throw new Error("User not found");
         }
-        if (user.userType !== "admin") {
+        if (user.userType === "user") {
           query.approved = true;
+          query.deleted = false;
+        } else if (user.userType === "instructor") {
           query.deleted = false;
         } else {
           if (deleted) {
@@ -538,7 +551,32 @@ class AcademyService {
         { deleted: true },
         { new: true }
       );
-      return "Academy has been successfully deleted";
+
+      const user = await this.userModel.findById(String(academy.userId));
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const productDeletionMail = await generateEmail(
+        {
+          name: user.firstName,
+          productType: "Academy",
+          title: academy.name,
+        },
+        productDeletionFeedback
+      );
+
+      const mailSendSuccess = await sendEmail(
+        user.email,
+        productDeletionMail,
+        "Product Approval Feedback"
+      );
+
+      if (mailSendSuccess) {
+        return `Your product has been deleted. Please check your mail for additional information`;
+      } else {
+        return "Your product has been deleted";
+      }
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error deleting academy");
