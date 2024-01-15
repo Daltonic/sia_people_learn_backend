@@ -17,6 +17,7 @@ import {
   approveCourseSchema,
   createCourseSchema,
   deleteCourseSchema,
+  fetchCourseSchema,
   fetchCoursesSchema,
   orderLessonsSchema,
   submitCourseSchema,
@@ -59,7 +60,7 @@ class CourseController implements Controller {
 
     this.router.get(
       `${this.path}/:courseId`,
-      [validateResource(fetchCoursesSchema)],
+      [validateResource(fetchCourseSchema)],
       this.fetchCourse
     );
 
