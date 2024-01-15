@@ -271,7 +271,6 @@ class CourseService {
   }
 
   public async fetchCourse(courseId: string): Promise<object | Error> {
-    console.log(courseId);
     try {
       const course = await this.courseModel
         .findById(courseId)

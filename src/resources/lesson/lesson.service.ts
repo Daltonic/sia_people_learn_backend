@@ -150,7 +150,9 @@ class LessonService {
   ): Promise<string | Error> {
     try {
       // Fetch the lesson using the lessonId
+
       const lesson = await this.lessonModel.findById(lessonId);
+      console.log(lesson);
       if (!lesson) {
         throw new Error("Lesson not found");
       }
@@ -178,6 +180,7 @@ class LessonService {
 
       // Now delete the lesson
       await this.lessonModel.findByIdAndDelete(lessonId);
+      console.log("Success");
       return "Lesson successfully deleted";
     } catch (e: any) {
       log.error(e.message);
