@@ -201,7 +201,7 @@ class AcademyService {
         .populate({
           path: "courses",
           model: this.courseModel,
-          select: "_id name",
+          select: "_id name imageUrl",
         })
         .populate({
           path: "userId",
@@ -475,6 +475,10 @@ class AcademyService {
         throw new Error(
           "Only course instructor can add this course to an academy"
         );
+      }
+
+      if (academy.courses.includes(course._id)) {
+        return academy;
       }
 
       const updatedAcademy = await this.academyModel.findByIdAndUpdate(
