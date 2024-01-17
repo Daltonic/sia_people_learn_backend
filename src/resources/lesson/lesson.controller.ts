@@ -121,6 +121,7 @@ class LessonController implements Controller {
   ) => {
     const { lessonId } = req.params;
     const { _id: userId } = res.locals.user;
+
     try {
       const message = await this.lessonService.deleteLesson(lessonId, userId);
       res.status(StatusCodes.OK).send(message);
