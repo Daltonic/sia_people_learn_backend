@@ -45,7 +45,7 @@ class PostController implements Controller {
 
     this.router.get(
       `${this.path}/:postId`,
-      [loggedIn, validateResource(fetchPostSchema)],
+      validateResource(fetchPostSchema),
       this.fetchPost
     );
 

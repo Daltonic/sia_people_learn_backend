@@ -16,7 +16,8 @@ class PostService {
     postInput: CreatePostInterface,
     userId: string
   ): Promise<object | Error> {
-    const { name, description, overview, imageUrl, parentId } = postInput;
+    const { title, description, overview, imageUrl, parentId, category } =
+      postInput;
 
     try {
       // Ensure that this is a valid user
@@ -36,10 +37,11 @@ class PostService {
 
       // Create the post
       const post = await this.postModel.create({
-        name,
+        title,
         description,
         overview,
         userId,
+        category: category.toUpperCase(),
         parentId: parentId || null,
         imageUrl: imageUrl || null,
         published: parentId ? true : false,
@@ -57,9 +59,9 @@ class PostService {
     postId: string,
     userId: string
   ): Promise<object | Error> {
-    const { name, overview, description, imageUrl } = postInput;
+    const { title, overview, description, imageUrl, category } = postInput;
     try {
-      if (!name && !overview && !description && !imageUrl) {
+      if (!title && !overview && !description && !imageUrl && !category) {
         throw new Error("No data to update");
       }
 
@@ -85,10 +87,11 @@ class PostService {
       const updatedPost = await this.postModel.findByIdAndUpdate(
         postId,
         {
-          name: name || post.name,
+          name: title || post.title,
           description: description || post.description,
           overview: overview || post.overview,
           imageUrl: imageUrl || post.imageUrl,
+          category: category?.toUpperCase() || post.category,
           published: user.userType === "admin",
         },
         { new: true }
@@ -146,11 +149,18 @@ class PostService {
   public async fetchPost(postId: string): Promise<object | Error> {
     try {
       // Ensure that the post exists
-      const post = await this.postModel.findById(postId).populate({
-        path: "comments",
-        model: this.postModel,
-        select: "_id name description overview",
-      });
+      const post = await this.postModel
+        .findById(postId)
+        .populate({
+          path: "comments",
+          model: this.postModel,
+          select: "_id name description overview",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id username firstName lastName imgUrl",
+        });
       if (!post) {
         throw new Error("Post not found");
       }
@@ -200,7 +210,7 @@ class PostService {
       const query: FilterQuery<typeof this.postModel> = {};
       if (searchQuery) {
         query.$or = [
-          { name: { $regex: new RegExp(searchQuery, "i") } },
+          { title: { $regex: new RegExp(searchQuery, "i") } },
           { overview: { $regex: new RegExp(searchQuery, "i") } },
           { description: { $regex: new RegExp(searchQuery, "i") } },
         ];
@@ -262,12 +272,12 @@ class PostService {
         .populate({
           path: "userId",
           model: this.userModel,
-          select: "_id username firstName lastName",
+          select: "_id username firstName lastName imgUrl",
         })
         .populate({
           path: "comments",
           model: this.postModel,
-          select: "_id name description overview",
+          select: "_id title category imageUrl description overview",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
@@ -276,6 +286,7 @@ class PostService {
       const totalPosts = await this.postModel.countDocuments(query);
       const isNext = totalPosts > skipAmount + posts.length;
       const numOfPages = Math.ceil(totalPosts / numericPageSize);
+
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);
