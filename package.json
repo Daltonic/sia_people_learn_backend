@@ -67,6 +67,7 @@
     "passport-twitter": "^1.0.4",
     "pino": "^8.16.2",
     "pino-pretty": "^10.2.3",
+    "stripe": "^14.13.0",
     "zod": "^3.22.4"
   }
 }
