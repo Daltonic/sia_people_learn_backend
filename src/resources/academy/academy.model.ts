@@ -5,6 +5,7 @@ export interface IAcademy extends Document {
   description: string;
   overview: string;
   imageUrl?: string;
+  ref?: string | null;
   price: number;
   validity: number;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
@@ -31,6 +32,7 @@ const AcademySchema = new Schema<IAcademy>(
     description: { type: String, required: true },
     overview: { type: String, required: true },
     imageUrl: { type: String },
+    ref: { type: String, default: null },
     price: { type: Number, required: true },
     validity: { type: Number, default: 0 },
     difficulty: {
