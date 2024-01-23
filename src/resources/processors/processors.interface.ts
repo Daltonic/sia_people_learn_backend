@@ -1,8 +1,12 @@
 import { TypeOf } from 'zod'
-import { checkoutProductsSchema } from './processors.validation'
+import { checkoutProductSchema, checkoutProductsSchema } from './processors.validation'
 
 export type CheckoutProductsInterface = TypeOf<
   typeof checkoutProductsSchema
+>['body']
+
+export type CheckoutProductInterface = TypeOf<
+  typeof checkoutProductSchema
 >['body']
 
 export interface ProductItem {
@@ -10,4 +14,5 @@ export interface ProductItem {
   name: string
   amount: number
   image: string
+  interval?: number
 }
