@@ -15,4 +15,5 @@ export interface ProductItem {
   amount: number
   image: string
   interval?: number
+  ref?: string
 }
