@@ -25,9 +25,14 @@ class StripeService {
 
       for (let index = 0; index < productIds.length; index++) {
         let productItem
-        
-        if(productType === "Academy") {
-          productItem = await this.academyModel.findById(productIds[index])
+
+        if (productType === 'Academy') {
+          const academy = await this.academyModel.findById(productIds[index])
+          if (academy && academy.validity === 0) {
+            productItem = academy
+          }else {
+            return Promise.reject(new Error('Available only for subscription'))
+          }
         } else {
           productItem = await this.courseModel.findById(productIds[index])
         }
@@ -76,14 +81,16 @@ class StripeService {
       if (academy && academy.validity > 0) {
         product = {
           name: String(academy.name),
-          productId: String(academy.ref),
+          ref: String(academy.ref),
+          productId: String(academy.id),
           image: String(academy.imageUrl),
           amount: Number(academy.price),
           interval: academy.validity,
         }
       } else {
-        return Promise.reject('Subscribable Academy Not Found')
+        return Promise.reject(new Error('Not available for subscription'))
       }
+      
 
       const customer = await stripe.customers.create({
         metadata: {
@@ -92,7 +99,7 @@ class StripeService {
         },
       })
 
-      const prices = await stripe.prices.list({ product: product.productId })
+      const prices = await stripe.prices.list({ product: product.ref })
       const price = prices.data[0]
       const session = await this.createStripeSubscription(customer, price)
 
@@ -167,19 +174,19 @@ class StripeService {
     const taxPercentage = 2.9 // Stripe tax rate: 2.9%
     const fixedFee = 30 // Stripe fixed fee: $0.30
 
-    const productResponse = await stripe.products.update(product.productId, {
+    const productResponse = await stripe.products.update(product.ref, {
       name: product.name,
       images: [product.image],
       description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing.`,
       metadata: {
-        productId: product.productId,
+        ...product,
       },
     })
 
     // After updating the product, create a new price
     return await this.createPrice({
       ...product,
-      productId: productResponse.id,
+      ref: productResponse.id,
     })
   }
 
@@ -192,14 +199,14 @@ class StripeService {
       images: [product.image],
       description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing.`,
       metadata: {
-        productId: product.productId,
+        ...product,
       },
     })
 
     // After creating the product, create a new price
     return await this.createPrice({
       ...product,
-      productId: productResponse.id,
+      ref: productResponse.id,
     })
   }
 
@@ -216,8 +223,36 @@ class StripeService {
       unit_amount: unitAmount,
       currency: 'usd',
       recurring: { interval: 'month', interval_count: product.interval },
-      product: product.productId,
+      product: product.ref,
     })
+  }
+
+  public async stripeWebhook(
+    payload: any,
+    signature: any
+  ): Promise<object | Error> {
+    const secret = process.env.STRIPE_ENDPOINT_SECRET
+    try {
+      const event = await stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        secret
+      )
+
+      if (event.type === 'checkout.session.completed') {
+        const paymentMode = event.data.object.mode
+        if (paymentMode === 'payment') {
+          const customer = await stripe.customers.retrieve(
+            event.data.object.customer
+          )
+        }
+      }
+
+      return {}
+    } catch (e: any) {
+      log.error(e.message)
+      throw new Error(e.message || 'Error checking out with stripe')
+    }
   }
 }
 export default StripeService

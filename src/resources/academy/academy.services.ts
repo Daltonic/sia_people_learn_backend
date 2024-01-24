@@ -117,12 +117,14 @@ class AcademyService {
         interval: academy.validity,
       }
 
-      const productItem = await this.processors.createProduct(product)
-      const ref = productItem.product
+      if (academy.validity > 0) {
+        const productItem = await this.processors.createProduct(product)
+        const ref = productItem.product
 
-      await this.academyModel.findByIdAndUpdate(academy._id, {
-        ref: ref,
-      });
+        await this.academyModel.findByIdAndUpdate(academy._id, {
+          ref: ref,
+        })
+      }
 
       return { academy, coursesNotFound }
     } catch (e: any) {
@@ -205,7 +207,8 @@ class AcademyService {
 
       const product: ProductItem = {
         name: String(name),
-        productId: String(academy.ref),
+        ref: String(academy.ref),
+        productId: String(academy.id),
         image: String(imageUrl),
         amount: Number(price),
         interval: Number(validity),
@@ -349,7 +352,7 @@ class AcademyService {
         .limit(numericPageSize)
         .sort(sortOptions)
         .select(
-          'name description overview imageUrl price difficulty duration rating reviewsCount highlights requirements approved deleted'
+          'name description overview imageUrl price difficulty duration validity rating reviewsCount highlights requirements approved deleted'
         )
 
       // Find out if there is a next page
