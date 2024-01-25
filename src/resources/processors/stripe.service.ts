@@ -30,7 +30,7 @@ class StripeService {
           const academy = await this.academyModel.findById(productIds[index])
           if (academy && academy.validity === 0) {
             productItem = academy
-          }else {
+          } else {
             return Promise.reject(new Error('Available only for subscription'))
           }
         } else {
@@ -90,7 +90,6 @@ class StripeService {
       } else {
         return Promise.reject(new Error('Not available for subscription'))
       }
-      
 
       const customer = await stripe.customers.create({
         metadata: {
@@ -227,7 +226,7 @@ class StripeService {
     })
   }
 
-  public async stripeWebhook(
+  public async webhook(
     payload: any,
     signature: any
   ): Promise<object | Error> {
@@ -239,12 +238,24 @@ class StripeService {
         secret
       )
 
+      let products: ProductItem[]
+      let userId: string
+
+      console.log(payload, signature);
+      
+
       if (event.type === 'checkout.session.completed') {
         const paymentMode = event.data.object.mode
         if (paymentMode === 'payment') {
           const customer = await stripe.customers.retrieve(
             event.data.object.customer
           )
+
+          products = customer.metadata.product
+          userId = customer.metadata.userId
+          // update the subscriptions table for each product of a specific user
+
+          console.log(products, userId)
         }
       }
 
