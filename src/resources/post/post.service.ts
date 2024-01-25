@@ -47,6 +47,16 @@ class PostService {
         published: parentId ? true : false,
       });
 
+      if (parentId) {
+        await this.postModel.findByIdAndUpdate(
+          parentId,
+          {
+            $push: { comments: post._id },
+          },
+          { new: true }
+        );
+      }
+
       return post;
     } catch (e: any) {
       log.error(e.message);
