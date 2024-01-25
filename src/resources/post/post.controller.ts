@@ -11,7 +11,7 @@ import {
 } from "@/resources/post/post.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
-import { loggedIn, validateResource } from "@/middlewares/index";
+import { isAdmin, loggedIn, validateResource } from "@/middlewares/index";
 import {
   createPostSchema,
   deletePostSchema,
@@ -51,7 +51,7 @@ class PostController implements Controller {
 
     this.router.put(
       `${this.path}/publish/:postId`,
-      [loggedIn, validateResource(publishPostSchema)],
+      [isAdmin, validateResource(publishPostSchema)],
       this.publishPost
     );
 
