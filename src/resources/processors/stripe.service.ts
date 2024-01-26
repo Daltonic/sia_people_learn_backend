@@ -241,9 +241,6 @@ class StripeService {
       let products: ProductItem[]
       let userId: string
 
-      console.log(payload, signature);
-      
-
       if (event.type === 'checkout.session.completed') {
         const paymentMode = event.data.object.mode
         if (paymentMode === 'payment') {
@@ -251,7 +248,7 @@ class StripeService {
             event.data.object.customer
           )
 
-          products = customer.metadata.product
+          products = customer.metadata.products
           userId = customer.metadata.userId
           // update the subscriptions table for each product of a specific user
 
