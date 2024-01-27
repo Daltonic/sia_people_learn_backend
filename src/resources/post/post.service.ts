@@ -181,7 +181,19 @@ class PostService {
     }
   }
 
-  public async fetchUserPosts(userId: string): Promise<object | Error> {
+  public async fetchUserPosts(
+    userId: string,
+    queryOptions: FetchPostsInterface
+  ): Promise<object | Error> {
+    const {
+      searchQuery,
+      filter,
+      page,
+      pageSize,
+      parentsOnly,
+      deleted,
+      parentId,
+    } = queryOptions;
     try {
       const user = await this.userModel.findById(userId);
 
@@ -189,13 +201,53 @@ class PostService {
         throw new Error("User not found");
       }
 
-      // Todo: Pagination and searching
-      const posts = await this.postModel.find({ userId }).populate({
-        path: "comments",
-        model: this.postModel,
-        select: "_id name description overview",
-      });
-      return posts;
+      // Design a filtering stratefy
+      const query: FilterQuery<typeof this.postModel> = {};
+      if (searchQuery) {
+        query.$or = [
+          { title: { $regex: new RegExp(searchQuery, "i") } },
+          { overview: { $regex: new RegExp(searchQuery, "i") } },
+          { description: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (parentsOnly) {
+        query.parentId = null;
+      }
+
+      if (parentId) {
+        query.parentId = parentId;
+      }
+
+      // Do not return deleted query
+      query.deleted = false;
+
+      query.userId = userId;
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      if (filter === "newest") {
+        sortOptions = { createdAt: -1 };
+      } else {
+        sortOptions = { createdAt: 1 };
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const posts = await this.postModel
+        .find(query)
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      const totalPosts = await this.postModel.countDocuments(query);
+      const isNext = totalPosts > skipAmount + posts.length;
+      const numOfPages = Math.ceil(totalPosts / numericPageSize);
+
+      return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
       throw new Error(e.message || "Error fetching User's Posts");
@@ -264,9 +316,6 @@ class PostService {
         case "oldest":
           sortOptions = { createdAt: 1 };
           break;
-        case "recommended":
-          //todo: Decide on a recommendation algorithm
-          break;
         default:
           sortOptions = { createdAt: -1 };
           break;
@@ -283,11 +332,6 @@ class PostService {
           path: "userId",
           model: this.userModel,
           select: "_id username firstName lastName imgUrl",
-        })
-        .populate({
-          path: "comments",
-          model: this.postModel,
-          select: "_id title category imageUrl description overview",
         })
         .skip(skipAmount)
         .limit(numericPageSize)

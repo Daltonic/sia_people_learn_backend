@@ -55,7 +55,11 @@ class PostController implements Controller {
       this.publishPost
     );
 
-    this.router.get(`${this.path}/user/posts`, [loggedIn], this.fetchUserPosts);
+    this.router.get(
+      `${this.path}/user/posts`,
+      [loggedIn, validateResource(fetchPostsSchema)],
+      this.fetchUserPosts
+    );
 
     this.router.get(
       `${this.path}`,
@@ -141,15 +145,19 @@ class PostController implements Controller {
   };
 
   private fetchUserPosts = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchPostsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
     const { _id: userId } = res.locals.user;
+    const queryOptions = req.query;
 
     try {
-      const posts = await this.postService.fetchUserPosts(userId);
-      res.status(StatusCodes.OK).json(posts);
+      const result = await this.postService.fetchUserPosts(
+        userId,
+        queryOptions
+      );
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
