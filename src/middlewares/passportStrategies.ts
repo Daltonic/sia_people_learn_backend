@@ -17,7 +17,14 @@ import {
   Profile as TwitterProfile,
 } from "passport-twitter";
 import { createAccessToken, generateAlphanumeric, log } from "@/utils/index";
-import e from "express";
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user: any, done) => {
+  done(null, user);
+});
 
 export const googleStrategy = new GoogleStrategy(
   {
@@ -239,10 +246,10 @@ passport.use(facebookStrategy);
 passport.use(githubStrategy);
 passport.use(twitterStrategy);
 
-// passport.serializeUser((user, done) => {
-//   done(null, user);
-// });
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
 
-// passport.deserializeUser((user: any, done) => {
-//   done(null, user);
-// });
+passport.deserializeUser((user: any, done) => {
+  done(null, user);
+});

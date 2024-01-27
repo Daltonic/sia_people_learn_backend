@@ -8,7 +8,7 @@ import { StatusCodes } from "http-status-codes";
 import { loginSchema } from "@/resources/session/session.validation";
 import { loggedIn, validateResource } from "@/middlewares/index";
 import { get } from "lodash";
-import passport, { session } from "passport";
+import passport from "passport";
 import { IUser } from "../user/user.model";
 
 class SessionController implements Controller {
@@ -40,7 +40,7 @@ class SessionController implements Controller {
       `/auth/google/callback`,
       passport.authenticate("google", {
         session: false,
-        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
+        failureRedirect: "/",
       }),
       this.socialLoginSuccess
     );
@@ -57,7 +57,7 @@ class SessionController implements Controller {
       `/auth/github/callback`,
       passport.authenticate("github", {
         session: false,
-        successRedirect: `${process.env.SOCIAL_REDIRECT_URL}`,
+        failureRedirect: `/`,
       }),
       this.socialLoginSuccess
     );
@@ -121,15 +121,13 @@ class SessionController implements Controller {
         user: IUser;
         accessToken: string;
       };
-      console.log(user, accessToken);
+      const modifiedUser = JSON.stringify(filteredUser(user as IUser));
 
-      res.json({ user: filteredUser(user), accessToken });
-
-      res.writeHead(301, {
-        location: "http://localhost:3000/login",
-      });
-      res.end();
+      res.redirect(
+        `${process.env.SOCIAL_REDIRECT_URL}?user=${modifiedUser}&token=${accessToken}`
+      );
     } catch (e: any) {
+      console.log(e.message);
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
   };
