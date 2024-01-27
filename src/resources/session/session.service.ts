@@ -88,8 +88,9 @@ class SessionService {
     try {
       // Fetch the current session
       const session = await this.sessionModel.findOne({ user: userId });
+
       if (!session) {
-        throw new Error("You are currently logged out");
+        return "Logout successful";
       }
 
       await this.sessionModel.findByIdAndDelete(session._id);
