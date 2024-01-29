@@ -58,9 +58,9 @@ class SubscriptionService {
             throw new Error("Academy not found");
           }
           // Recurring should be for academy that validity is not equal to zero
-          if (academy && academy.validity < 1) {
-            return Promise.reject(new Error('Available only for subscription'))
-          }
+          // if (academy && academy.validity > 0) {
+          //   return Promise.reject(new Error('Available only for subscription'))
+          // }
           
           productAmount = academy.price;
           break;
