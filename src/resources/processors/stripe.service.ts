@@ -1,40 +1,45 @@
 require('dotenv').config()
 import log from '@/utils/logger'
+import Subscription from '@/resources/subscription/subscription.model'
 import Course from '@/resources/course/course.model'
 import Academy from '@/resources/academy/academy.model'
+import Promo from '@/resources/promo/promo.model'
 import {
   CheckoutProductInterface,
   CheckoutProductsInterface,
   ProductItem,
 } from './processors.interface'
+import OrderService from '../order/order.service'
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 class StripeService {
+  private subscriptionModel = Subscription
   private courseModel = Course
   private academyModel = Academy
+  private promoModel = Promo
+  private order = new OrderService()
 
   public async stripeCheckout(
     checkoutInput: CheckoutProductsInterface,
     userId: string
   ): Promise<object | Error> {
-    const { productIds, productType } = checkoutInput
+    const { subscriptionIds, paymentType, promoId } = checkoutInput
 
     try {
       // Ensure that the product exists
       const products: ProductItem[] = []
+      const promo = await this.promoModel.findById(promoId)
+      const promoPercent: number =
+        promo && promo?.validated ? Number(promo?.percentage) : 0
 
-      for (let index = 0; index < productIds.length; index++) {
+      for (let index = 0; index < subscriptionIds.length; index++) {
         let productItem
+        const subscription = await this.subscriptionModel.findById(subscriptionIds[index])
 
-        if (productType === 'Academy') {
-          const academy = await this.academyModel.findById(productIds[index])
-          if (academy && academy.validity === 0) {
-            productItem = academy
-          } else {
-            return Promise.reject(new Error('Available only for subscription'))
-          }
+        if (subscription?.productModelType === 'Academy') {
+          productItem = await this.academyModel.findById(subscription?.productId)
         } else {
-          productItem = await this.courseModel.findById(productIds[index])
+          productItem = await this.courseModel.findById(subscription?.productId)
         }
 
         if (productItem) {
@@ -51,10 +56,13 @@ class StripeService {
         metadata: {
           products: JSON.stringify(products),
           userId,
+          promoId,
+          paymentType,
+          subscriptionIds: JSON.stringify(subscriptionIds),
         },
       })
 
-      const session = await this.createStripeSession(customer, products)
+      const session = await this.createStripeSession(customer, products, promoPercent)
 
       if (session.url) {
         return Promise.resolve(session)
@@ -71,11 +79,13 @@ class StripeService {
     checkoutInput: CheckoutProductInterface,
     userId: string
   ): Promise<object | Error> {
-    const { productId } = checkoutInput
+    const { subscriptionId, paymentType } = checkoutInput
 
     try {
       // Ensure that the product exists
-      const academy = await this.academyModel.findById(productId)
+
+      const subscription = await this.subscriptionModel.findById(subscriptionId)
+      const academy = await this.academyModel.findById(subscription?.productId)
       let product: ProductItem
 
       if (academy && academy.validity > 0) {
@@ -88,13 +98,15 @@ class StripeService {
           interval: academy.validity,
         }
       } else {
-        return Promise.reject(new Error('Not available for subscription'))
+        return Promise.reject(new Error('Product not subscribable'))
       }
 
       const customer = await stripe.customers.create({
         metadata: {
           product: JSON.stringify(product),
           userId,
+          paymentType,
+          subscriptionIds: JSON.stringify([subscriptionId])
         },
       })
 
@@ -134,16 +146,20 @@ class StripeService {
 
   private async createStripeSession(
     customer: any,
-    products: ProductItem[]
+    products: ProductItem[],
+    discountPercentage: number = 0
   ): Promise<any> {
     const taxPercentage = 2.9 // Stripe tax rate: 2.9%
     const fixedFee = 30 // Stripe fixed fee: .30
 
     const lineItems = products.map((product) => {
-      const taxAmount = product.amount * (taxPercentage / 100)
+      const discountAmount = product.amount * (discountPercentage / 100);
+      const discountedAmount = product.amount - discountAmount;
+
+      const taxAmount = discountedAmount * (taxPercentage / 100);
       const unitAmount = Math.round(
-        (product.amount + taxAmount + fixedFee / 100) * 100
-      )
+        (discountedAmount + taxAmount + fixedFee / 100) * 100
+      );
 
       return {
         price_data: {
@@ -151,7 +167,7 @@ class StripeService {
           product_data: {
             name: product.name,
             images: [product.image],
-            description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing.`,
+            description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing. ${discountPercentage > 0 ? 'Discount applied: ' + discountPercentage + '%' : ''}`,
           },
           unit_amount: unitAmount,
         },
@@ -226,10 +242,7 @@ class StripeService {
     })
   }
 
-  public async webhook(
-    payload: any,
-    signature: any
-  ): Promise<object | Error> {
+  public async webhook(payload: any, signature: any): Promise<object | Error> {
     const secret = process.env.STRIPE_ENDPOINT_SECRET
     try {
       const event = await stripe.webhooks.constructEvent(
@@ -238,21 +251,50 @@ class StripeService {
         secret
       )
 
-      let products: ProductItem[]
-      let userId: string
-
       if (event.type === 'checkout.session.completed') {
-        const paymentMode = event.data.object.mode
-        if (paymentMode === 'payment') {
-          const customer = await stripe.customers.retrieve(
-            event.data.object.customer
-          )
+        const session = event.data.object
+        const transactionRef = session.payment_intent
+        const paymentMode = session.mode
 
-          products = customer.metadata.products
-          userId = customer.metadata.userId
+        if (paymentMode === 'payment') {
+          const customer = await stripe.customers.retrieve(session.customer)
+          const subscriptions: string[] = JSON.parse(customer.metadata.subscriptionIds)
           // update the subscriptions table for each product of a specific user
 
-          console.log(products, userId)
+          const userId = customer.metadata.userId
+          const promoId = customer.metadata.promoId
+          const paymentType = customer.metadata.paymentType
+
+          this.order.createOrder({
+            userId,
+            promoId,
+            paymentType,
+            transactionRef,
+            subscriptions,
+          })
+        }
+      } else if (event.type === 'invoice.paid') {
+        const session = event.data.object
+        const transactionRef = session.payment_intent
+        const subscriptionId = session.subscription
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+
+        if (subscription) {
+          const customer = await stripe.customers.retrieve(
+            subscription.customer
+          )
+
+          const subscriptions: string[] = JSON.parse(customer.metadata.subscriptionIds)
+          // update the subscriptions table for this product of a specific user
+          const userId = customer.metadata.userId
+          const paymentType = customer.metadata.paymentType
+
+          this.order.createOrder({
+            userId,
+            paymentType,
+            transactionRef,
+            subscriptions,
+          })
         }
       }
 

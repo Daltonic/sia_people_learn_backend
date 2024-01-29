@@ -2,13 +2,16 @@ import { object, string, z } from 'zod'
 
 export const checkoutProductsSchema = object({
   body: object({
-    productIds: string({ required_error: 'Product IDs is required' }).array(),
-    productType: z.enum(["Course", "Book", "Academy"], { required_error: "type is required" }),
+    subscriptionIds: string({ required_error: 'Subscription IDs is required' }).array(),
+    paymentType: z.enum(["Stripe"], { required_error: "Payment Type is required" }),
+    promoId: string().optional(),
   }),
 })
 
 export const checkoutProductSchema = object({
   body: object({
-    productId: string({ required_error: 'Product ID is required' }),
+    subscriptionId: string({ required_error: 'Subscription ID is required' }),
+    paymentFrequency: z.enum(["Month", "Year"], { required_error: "Product Type is required" }),
+    paymentType: z.enum(["Stripe"], { required_error: "Payment Type is required" }),
   }),
 })
