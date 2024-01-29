@@ -87,6 +87,7 @@ class StripeService {
       const subscription = await this.subscriptionModel.findById(subscriptionId)
       const academy = await this.academyModel.findById(subscription?.productId)
       let product: ProductItem
+      
 
       if (academy && academy.validity > 0) {
         product = {
