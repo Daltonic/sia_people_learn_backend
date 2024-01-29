@@ -57,6 +57,11 @@ class SubscriptionService {
           if (!academy) {
             throw new Error("Academy not found");
           }
+          // Recurring should be for academy that validity is not equal to zero
+          if (academy && academy.validity < 1) {
+            return Promise.reject(new Error('Available only for subscription'))
+          }
+          
           productAmount = academy.price;
           break;
         case "Course":
@@ -71,8 +76,8 @@ class SubscriptionService {
       const subscription = await this.subscriptionModel.create({
         userId,
         orderId: orderId || null,
-        paymentFrequency: paymentFrequency,
-        productType: productType,
+        paymentFrequency,
+        productType,
         productId,
         expiresAt,
         amount: productAmount,
