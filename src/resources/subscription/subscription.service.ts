@@ -2,7 +2,7 @@ import Academy from "@/resources/academy/academy.model";
 import Course from "@/resources/course/course.model";
 import Order, { IOrder } from "@/resources/order/order.model";
 import User from "@/resources/user/user.model";
-import Subscription from "@/resources/subscription/subscription.model";
+import Subscription, { ISubscription } from "@/resources/subscription/subscription.model";
 import {
   CreateSubscriptionInterface,
   FetchSubscriptionsInterface,
@@ -20,7 +20,7 @@ class SubscriptionService {
   public async createSubscription(
     subscriptionInput: CreateSubscriptionInterface,
     userId: string
-  ): Promise<object | Error> {
+  ): Promise<ISubscription | Error> {
     const { orderId, paymentFrequency, productId, productType } =
       subscriptionInput;
     try {
@@ -57,10 +57,6 @@ class SubscriptionService {
           if (!academy) {
             throw new Error("Academy not found");
           }
-          // Recurring should be for academy that validity is not equal to zero
-          // if (academy && academy.validity > 0) {
-          //   return Promise.reject(new Error('Available only for subscription'))
-          // }
           
           productAmount = academy.price;
           break;
