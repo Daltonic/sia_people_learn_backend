@@ -6,10 +6,12 @@ export const createSubsciptionSchema = object({
     paymentFrequency: z.enum(["Month", "Year", "One-Off"], {
       required_error: "Payment Frequency is required",
     }),
-    productType: z.enum(["Course", "Academy"], {
-      required_error: "Product type if required",
-    }),
-    productId: string({ required_error: "Product ID is required" }),
+    products: object({
+      productId: string({ required_error: "Product ID is required" }),
+      productType: z.enum(["Course", "Academy"], {
+        required_error: "Product type is required",
+      }),
+    }).array(),
   }),
 });
 
