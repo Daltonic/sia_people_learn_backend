@@ -1,6 +1,8 @@
 require('dotenv').config()
 import log from '@/utils/logger'
-import Subscription from '@/resources/subscription/subscription.model'
+import Subscription, {
+  ISubscription,
+} from '@/resources/subscription/subscription.model'
 import Course from '@/resources/course/course.model'
 import Academy from '@/resources/academy/academy.model'
 import Promo from '@/resources/promo/promo.model'
@@ -10,6 +12,7 @@ import {
   ProductItem,
 } from './processors.interface'
 import OrderService from '../order/order.service'
+import SubscriptionService from '../subscription/subscription.service'
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 class StripeService {
@@ -18,6 +21,7 @@ class StripeService {
   private academyModel = Academy
   private promoModel = Promo
   private order = new OrderService()
+  private subscribe = new SubscriptionService()
 
   public async stripeCheckout(
     checkoutInput: CheckoutProductsInterface,
@@ -34,10 +38,14 @@ class StripeService {
 
       for (let index = 0; index < subscriptionIds.length; index++) {
         let productItem
-        const subscription = await this.subscriptionModel.findById(subscriptionIds[index])
+        const subscription = await this.subscriptionModel.findById(
+          subscriptionIds[index]
+        )
 
         if (subscription?.productModelType === 'Academy') {
-          productItem = await this.academyModel.findById(subscription?.productId)
+          productItem = await this.academyModel.findById(
+            subscription?.productId
+          )
         } else {
           productItem = await this.courseModel.findById(subscription?.productId)
         }
@@ -62,7 +70,11 @@ class StripeService {
         },
       })
 
-      const session = await this.createStripeSession(customer, products, promoPercent)
+      const session = await this.createStripeSession(
+        customer,
+        products,
+        promoPercent
+      )
 
       if (session.url) {
         return Promise.resolve(session)
@@ -79,15 +91,27 @@ class StripeService {
     checkoutInput: CheckoutProductInterface,
     userId: string
   ): Promise<object | Error> {
-    const { subscriptionId, paymentType } = checkoutInput
+    const { productId, paymentFrequency, paymentType } = checkoutInput
 
     try {
       // Ensure that the product exists
 
-      const subscription = await this.subscriptionModel.findById(subscriptionId)
+      const subscriptions = (await this.subscribe.createSubscription(
+        {
+          paymentFrequency: paymentFrequency || 'Month',
+          products: [
+            {
+              productId,
+              productType: 'Academy',
+            },
+          ],
+        },
+        userId
+      )) as ISubscription[]
+
+      const subscription: ISubscription = subscriptions[0]
       const academy = await this.academyModel.findById(subscription?.productId)
       let product: ProductItem
-      
 
       if (academy && academy.validity > 0) {
         product = {
@@ -107,7 +131,7 @@ class StripeService {
           product: JSON.stringify(product),
           userId,
           paymentType,
-          subscriptionIds: JSON.stringify([subscriptionId])
+          subscriptionIds: JSON.stringify([subscription._id]),
         },
       })
 
@@ -154,13 +178,13 @@ class StripeService {
     const fixedFee = 30 // Stripe fixed fee: .30
 
     const lineItems = products.map((product) => {
-      const discountAmount = product.amount * (discountPercentage / 100);
-      const discountedAmount = product.amount - discountAmount;
+      const discountAmount = product.amount * (discountPercentage / 100)
+      const discountedAmount = product.amount - discountAmount
 
-      const taxAmount = discountedAmount * (taxPercentage / 100);
+      const taxAmount = discountedAmount * (taxPercentage / 100)
       const unitAmount = Math.round(
         (discountedAmount + taxAmount + fixedFee / 100) * 100
-      );
+      )
 
       return {
         price_data: {
@@ -168,7 +192,11 @@ class StripeService {
           product_data: {
             name: product.name,
             images: [product.image],
-            description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing. ${discountPercentage > 0 ? 'Discount applied: ' + discountPercentage + '%' : ''}`,
+            description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing. ${
+              discountPercentage > 0
+                ? 'Discount applied: ' + discountPercentage + '%'
+                : ''
+            }`,
           },
           unit_amount: unitAmount,
         },
@@ -259,7 +287,9 @@ class StripeService {
 
         if (paymentMode === 'payment') {
           const customer = await stripe.customers.retrieve(session.customer)
-          const subscriptions: string[] = JSON.parse(customer.metadata.subscriptionIds)
+          const subscriptions: string[] = JSON.parse(
+            customer.metadata.subscriptionIds
+          )
           // update the subscriptions table for each product of a specific user
 
           const userId = customer.metadata.userId
@@ -285,7 +315,9 @@ class StripeService {
             subscription.customer
           )
 
-          const subscriptions: string[] = JSON.parse(customer.metadata.subscriptionIds)
+          const subscriptions: string[] = JSON.parse(
+            customer.metadata.subscriptionIds
+          )
           // update the subscriptions table for this product of a specific user
           const userId = customer.metadata.userId
           const paymentType = customer.metadata.paymentType

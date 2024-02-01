@@ -10,8 +10,12 @@ export const checkoutProductsSchema = object({
 
 export const checkoutProductSchema = object({
   body: object({
-    subscriptionId: string({ required_error: 'Subscription ID is required' }),
-    paymentFrequency: z.enum(["Month", "Year"], { required_error: "Product Type is required" }),
-    paymentType: z.enum(["Stripe"], { required_error: "Payment Type is required" }),
+    productId: string({ required_error: 'Product ID is required' }),
+    paymentFrequency: z.enum(['Month', 'Year'], {
+      required_error: 'Product Type is required',
+    }).optional(),
+    paymentType: z.enum(['Stripe'], {
+      required_error: 'Payment Type is required',
+    }),
   }),
 })
