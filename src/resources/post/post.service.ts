@@ -193,6 +193,7 @@ class PostService {
       parentsOnly,
       deleted,
       parentId,
+      published,
     } = queryOptions;
     try {
       const user = await this.userModel.findById(userId);
@@ -217,6 +218,10 @@ class PostService {
 
       if (parentId) {
         query.parentId = parentId;
+      }
+
+      if (published) {
+        query.published = published;
       }
 
       // Do not return deleted query
