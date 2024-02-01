@@ -1,89 +1,94 @@
-require('dotenv').config()
-import log from '@/utils/logger'
+require("dotenv").config();
+import log from "@/utils/logger";
 import Subscription, {
   ISubscription,
-} from '@/resources/subscription/subscription.model'
-import Course from '@/resources/course/course.model'
-import Academy from '@/resources/academy/academy.model'
-import Promo from '@/resources/promo/promo.model'
+} from "@/resources/subscription/subscription.model";
+import Course from "@/resources/course/course.model";
+import Academy from "@/resources/academy/academy.model";
+import Promo from "@/resources/promo/promo.model";
 import {
   CheckoutProductInterface,
   CheckoutProductsInterface,
   ProductItem,
-} from './processors.interface'
-import OrderService from '../order/order.service'
-import SubscriptionService from '../subscription/subscription.service'
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+} from "./processors.interface";
+import OrderService from "../order/order.service";
+import SubscriptionService from "../subscription/subscription.service";
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 class StripeService {
-  private subscriptionModel = Subscription
-  private courseModel = Course
-  private academyModel = Academy
-  private promoModel = Promo
-  private order = new OrderService()
-  private subscribe = new SubscriptionService()
+  private subscriptionModel = Subscription;
+  private courseModel = Course;
+  private academyModel = Academy;
+  private promoModel = Promo;
+  private order = new OrderService();
+  private subscribe = new SubscriptionService();
 
   public async stripeCheckout(
     checkoutInput: CheckoutProductsInterface,
     userId: string
   ): Promise<object | Error> {
-    const { subscriptionIds, paymentType, promoId } = checkoutInput
+    const { paymentType, promoId, products } = checkoutInput;
 
     try {
-      // Ensure that the product exists
-      const products: ProductItem[] = []
-      const promo = await this.promoModel.findById(promoId)
+      // Create the subscriptions
+      const subscriptions = (await this.subscribe.createSubscription(
+        { paymentFrequency: "One-Off", products },
+        userId
+      )) as ISubscription[];
+
+      const promo = await this.promoModel.findById(promoId);
       const promoPercent: number =
-        promo && promo?.validated ? Number(promo?.percentage) : 0
+        promo && promo?.validated ? Number(promo?.percentage) : 0;
 
-      for (let index = 0; index < subscriptionIds.length; index++) {
-        let productItem
-        const subscription = await this.subscriptionModel.findById(
-          subscriptionIds[index]
-        )
+      const subscriptionIds: string[] = [];
 
-        if (subscription?.productModelType === 'Academy') {
-          productItem = await this.academyModel.findById(
-            subscription?.productId
-          )
-        } else {
-          productItem = await this.courseModel.findById(subscription?.productId)
-        }
-
-        if (productItem) {
-          products.push({
-            name: String(productItem.name),
-            productId: String(productItem.id),
-            image: String(productItem.imageUrl),
-            amount: Number(productItem.price),
-          })
-        }
-      }
+      const stripeProducts = (await Promise.all(
+        subscriptions.map(async (sub) => {
+          subscriptionIds.push(String(sub._id));
+          if (sub.productModelType === "Academy") {
+            const academy = await this.academyModel.findById(sub.productId);
+            return {
+              name: academy?.name,
+              productId: String(academy?._id),
+              image: String(academy?.imageUrl),
+              amount: Number(academy?.price),
+            };
+          } else {
+            const course = await this.courseModel.findById(sub.productId);
+            return {
+              name: course?.name,
+              productId: String(course?._id),
+              image: String(course?.imageUrl),
+              amount: Number(course?.price),
+            };
+          }
+        })
+      )) as ProductItem[];
 
       const customer = await stripe.customers.create({
         metadata: {
-          products: JSON.stringify(products),
+          products: JSON.stringify(stripeProducts),
           userId,
           promoId,
           paymentType,
           subscriptionIds: JSON.stringify(subscriptionIds),
         },
-      })
+      });
 
       const session = await this.createStripeSession(
         customer,
-        products,
+        stripeProducts,
         promoPercent
-      )
+      );
 
       if (session.url) {
-        return Promise.resolve(session)
+        return Promise.resolve(session);
       } else {
-        return Promise.reject()
+        return Promise.reject();
       }
     } catch (e: any) {
-      log.error(e.message)
-      throw new Error(e.message || 'Error checking out with stripe')
+      log.error(e.message);
+      throw new Error(e.message || "Error checking out with stripe");
     }
   }
 
@@ -91,27 +96,29 @@ class StripeService {
     checkoutInput: CheckoutProductInterface,
     userId: string
   ): Promise<object | Error> {
-    const { productId, paymentFrequency, paymentType } = checkoutInput
+    const { productId, paymentFrequency, paymentType } = checkoutInput;
 
     try {
       // Ensure that the product exists
 
       const subscriptions = (await this.subscribe.createSubscription(
         {
-          paymentFrequency: paymentFrequency || 'Month',
+          paymentFrequency: paymentFrequency || "Month",
           products: [
             {
               productId,
-              productType: 'Academy',
+              productType: "Academy",
             },
           ],
         },
         userId
-      )) as ISubscription[]
+      )) as ISubscription[];
 
-      const subscription: ISubscription = subscriptions[0]
-      const academy = await this.academyModel.findById(subscription?.productId)
-      let product: ProductItem
+      const subscription: ISubscription = subscriptions[0];
+
+      const academy = await this.academyModel.findById(subscription?.productId);
+
+      let product: ProductItem;
 
       if (academy && academy.validity > 0) {
         product = {
@@ -121,9 +128,9 @@ class StripeService {
           image: String(academy.imageUrl),
           amount: Number(academy.price),
           interval: academy.validity,
-        }
+        };
       } else {
-        return Promise.reject(new Error('Product not subscribable'))
+        return Promise.reject(new Error("Product not subscribable"));
       }
 
       const customer = await stripe.customers.create({
@@ -133,20 +140,20 @@ class StripeService {
           paymentType,
           subscriptionIds: JSON.stringify([subscription._id]),
         },
-      })
+      });
 
-      const prices = await stripe.prices.list({ product: product.ref })
-      const price = prices.data[0]
-      const session = await this.createStripeSubscription(customer, price)
+      const prices = await stripe.prices.list({ product: product.ref });
+      const price = prices.data[0];
+      const session = await this.createStripeSubscription(customer, price);
 
       if (session.url) {
-        return Promise.resolve(session)
+        return Promise.resolve(session);
       } else {
-        return Promise.reject()
+        return Promise.reject();
       }
     } catch (e: any) {
-      log.error(e.message)
-      throw new Error(e.message || 'Error checking out with stripe')
+      log.error(e.message);
+      throw new Error(e.message || "Error checking out with stripe");
     }
   }
 
@@ -155,18 +162,18 @@ class StripeService {
     price: any
   ): Promise<any> {
     return await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [
         {
           price: price.id,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: "subscription",
       customer: customer.id,
       success_url: process.env.SUCCESS_URI,
       cancel_url: process.env.CANCEL_URI,
-    })
+    });
   }
 
   private async createStripeSession(
@@ -174,49 +181,49 @@ class StripeService {
     products: ProductItem[],
     discountPercentage: number = 0
   ): Promise<any> {
-    const taxPercentage = 2.9 // Stripe tax rate: 2.9%
-    const fixedFee = 30 // Stripe fixed fee: .30
+    const taxPercentage = 2.9; // Stripe tax rate: 2.9%
+    const fixedFee = 30; // Stripe fixed fee: .30
 
     const lineItems = products.map((product) => {
-      const discountAmount = product.amount * (discountPercentage / 100)
-      const discountedAmount = product.amount - discountAmount
+      const discountAmount = product.amount * (discountPercentage / 100);
+      const discountedAmount = product.amount - discountAmount;
 
-      const taxAmount = discountedAmount * (taxPercentage / 100)
+      const taxAmount = discountedAmount * (taxPercentage / 100);
       const unitAmount = Math.round(
         (discountedAmount + taxAmount + fixedFee / 100) * 100
-      )
+      );
 
       return {
         price_data: {
-          currency: 'usd',
+          currency: "usd",
           product_data: {
             name: product.name,
             images: [product.image],
             description: `This product(s) includes tax of ${taxPercentage}% + ${fixedFee}¢ for stripe processing. ${
               discountPercentage > 0
-                ? 'Discount applied: ' + discountPercentage + '%'
-                : ''
+                ? "Discount applied: " + discountPercentage + "%"
+                : ""
             }`,
           },
           unit_amount: unitAmount,
         },
         quantity: 1,
-      }
-    })
+      };
+    });
 
     return await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: lineItems,
-      mode: 'payment',
+      mode: "payment",
       customer: customer.id,
       success_url: process.env.SUCCESS_URI,
       cancel_url: process.env.CANCEL_URI,
-    })
+    });
   }
 
   public async updateProduct(product: ProductItem): Promise<any> {
-    const taxPercentage = 2.9 // Stripe tax rate: 2.9%
-    const fixedFee = 30 // Stripe fixed fee: $0.30
+    const taxPercentage = 2.9; // Stripe tax rate: 2.9%
+    const fixedFee = 30; // Stripe fixed fee: $0.30
 
     const productResponse = await stripe.products.update(product.ref, {
       name: product.name,
@@ -225,18 +232,18 @@ class StripeService {
       metadata: {
         ...product,
       },
-    })
+    });
 
     // After updating the product, create a new price
     return await this.createPrice({
       ...product,
       ref: productResponse.id,
-    })
+    });
   }
 
   public async createProduct(product: ProductItem): Promise<any> {
-    const taxPercentage = 2.9 // Stripe tax rate: 2.9%
-    const fixedFee = 30 // Stripe fixed fee: $0.30
+    const taxPercentage = 2.9; // Stripe tax rate: 2.9%
+    const fixedFee = 30; // Stripe fixed fee: $0.30
 
     const productResponse = await stripe.products.create({
       name: product.name,
@@ -245,56 +252,56 @@ class StripeService {
       metadata: {
         ...product,
       },
-    })
+    });
 
     // After creating the product, create a new price
     return await this.createPrice({
       ...product,
       ref: productResponse.id,
-    })
+    });
   }
 
   private async createPrice(product: ProductItem): Promise<any> {
-    const taxPercentage = 2.9 // Stripe tax rate: 2.9%
-    const fixedFee = 30 // Stripe fixed fee: $0.30
+    const taxPercentage = 2.9; // Stripe tax rate: 2.9%
+    const fixedFee = 30; // Stripe fixed fee: $0.30
 
-    const taxAmount = product.amount * (taxPercentage / 100)
+    const taxAmount = product.amount * (taxPercentage / 100);
     const unitAmount = Math.round(
       (product.amount + taxAmount + fixedFee / 100) * 100
-    )
+    );
 
     return await stripe.prices.create({
       unit_amount: unitAmount,
-      currency: 'usd',
-      recurring: { interval: 'month', interval_count: product.interval },
+      currency: "usd",
+      recurring: { interval: "month", interval_count: product.interval },
       product: product.ref,
-    })
+    });
   }
 
   public async webhook(payload: any, signature: any): Promise<object | Error> {
-    const secret = process.env.STRIPE_ENDPOINT_SECRET
+    const secret = process.env.STRIPE_ENDPOINT_SECRET;
     try {
       const event = await stripe.webhooks.constructEvent(
         payload,
         signature,
         secret
-      )
+      );
 
-      if (event.type === 'checkout.session.completed') {
-        const session = event.data.object
-        const transactionRef = session.payment_intent
-        const paymentMode = session.mode
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+        const transactionRef = session.payment_intent;
+        const paymentMode = session.mode;
 
-        if (paymentMode === 'payment') {
-          const customer = await stripe.customers.retrieve(session.customer)
+        if (paymentMode === "payment") {
+          const customer = await stripe.customers.retrieve(session.customer);
           const subscriptions: string[] = JSON.parse(
             customer.metadata.subscriptionIds
-          )
+          );
           // update the subscriptions table for each product of a specific user
 
-          const userId = customer.metadata.userId
-          const promoId = customer.metadata.promoId
-          const paymentType = customer.metadata.paymentType
+          const userId = customer.metadata.userId;
+          const promoId = customer.metadata.promoId;
+          const paymentType = customer.metadata.paymentType;
 
           this.order.createOrder({
             userId,
@@ -302,40 +309,41 @@ class StripeService {
             paymentType,
             transactionRef,
             subscriptions,
-          })
+          });
         }
-      } else if (event.type === 'invoice.paid') {
-        const session = event.data.object
-        const transactionRef = session.payment_intent
-        const subscriptionId = session.subscription
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      } else if (event.type === "invoice.paid") {
+        const session = event.data.object;
+        const transactionRef = session.payment_intent;
+        const subscriptionId = session.subscription;
+        const subscription =
+          await stripe.subscriptions.retrieve(subscriptionId);
 
         if (subscription) {
           const customer = await stripe.customers.retrieve(
             subscription.customer
-          )
+          );
 
           const subscriptions: string[] = JSON.parse(
             customer.metadata.subscriptionIds
-          )
+          );
           // update the subscriptions table for this product of a specific user
-          const userId = customer.metadata.userId
-          const paymentType = customer.metadata.paymentType
+          const userId = customer.metadata.userId;
+          const paymentType = customer.metadata.paymentType;
 
           this.order.createOrder({
             userId,
             paymentType,
             transactionRef,
             subscriptions,
-          })
+          });
         }
       }
 
-      return {}
+      return {};
     } catch (e: any) {
-      log.error(e.message)
-      throw new Error(e.message || 'Error checking out with stripe')
+      log.error(e.message);
+      throw new Error(e.message || "Error checking out with stripe");
     }
   }
 }
-export default StripeService
+export default StripeService;
