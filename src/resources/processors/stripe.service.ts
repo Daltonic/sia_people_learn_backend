@@ -65,6 +65,8 @@ class StripeService {
         })
       )) as ProductItem[];
 
+      console.log(stripeProducts);
+
       const customer = await stripe.customers.create({
         metadata: {
           products: JSON.stringify(stripeProducts),
@@ -74,6 +76,8 @@ class StripeService {
           subscriptionIds: JSON.stringify(subscriptionIds),
         },
       });
+
+      console.log(customer);
 
       const session = await this.createStripeSession(
         customer,
@@ -181,6 +185,7 @@ class StripeService {
     products: ProductItem[],
     discountPercentage: number = 0
   ): Promise<any> {
+    console.log(products);
     const taxPercentage = 2.9; // Stripe tax rate: 2.9%
     const fixedFee = 30; // Stripe fixed fee: .30
 

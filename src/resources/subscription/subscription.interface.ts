@@ -3,6 +3,7 @@ import {
   createSubsciptionSchema,
   deleteSubscriptionSchema,
   fetchSubscriptionsSchema,
+  fetchUserSubscriptionsSchema,
 } from "@/resources/subscription/subscription.validation";
 
 export type CreateSubscriptionInterface = TypeOf<
@@ -15,4 +16,8 @@ export type DeleteSubscriptionInterface = TypeOf<
 
 export type FetchSubscriptionsInterface = TypeOf<
   typeof fetchSubscriptionsSchema
+>["query"];
+
+export type FetchUserSubscriptionsInterface = TypeOf<
+  typeof fetchUserSubscriptionsSchema
 >["query"];
