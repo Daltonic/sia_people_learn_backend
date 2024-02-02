@@ -16,7 +16,8 @@ class PostService {
     postInput: CreatePostInterface,
     userId: string
   ): Promise<object | Error> {
-    const { name, description, overview, imageUrl, parentId } = postInput;
+    const { title, description, overview, imageUrl, parentId, category } =
+      postInput;
 
     try {
       // Ensure that this is a valid user
@@ -36,14 +37,25 @@ class PostService {
 
       // Create the post
       const post = await this.postModel.create({
-        name,
+        title,
         description,
         overview,
         userId,
+        category: category.toUpperCase(),
         parentId: parentId || null,
         imageUrl: imageUrl || null,
         published: parentId ? true : false,
       });
+
+      if (parentId) {
+        await this.postModel.findByIdAndUpdate(
+          parentId,
+          {
+            $push: { comments: post._id },
+          },
+          { new: true }
+        );
+      }
 
       return post;
     } catch (e: any) {
@@ -57,9 +69,9 @@ class PostService {
     postId: string,
     userId: string
   ): Promise<object | Error> {
-    const { name, overview, description, imageUrl } = postInput;
+    const { title, overview, description, imageUrl, category } = postInput;
     try {
-      if (!name && !overview && !description && !imageUrl) {
+      if (!title && !overview && !description && !imageUrl && !category) {
         throw new Error("No data to update");
       }
 
@@ -85,10 +97,11 @@ class PostService {
       const updatedPost = await this.postModel.findByIdAndUpdate(
         postId,
         {
-          name: name || post.name,
+          name: title || post.title,
           description: description || post.description,
           overview: overview || post.overview,
           imageUrl: imageUrl || post.imageUrl,
+          category: category?.toUpperCase() || post.category,
           published: user.userType === "admin",
         },
         { new: true }
@@ -146,11 +159,18 @@ class PostService {
   public async fetchPost(postId: string): Promise<object | Error> {
     try {
       // Ensure that the post exists
-      const post = await this.postModel.findById(postId).populate({
-        path: "comments",
-        model: this.postModel,
-        select: "_id name description overview",
-      });
+      const post = await this.postModel
+        .findById(postId)
+        .populate({
+          path: "comments",
+          model: this.postModel,
+          select: "_id name description overview",
+        })
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id username firstName lastName imgUrl",
+        });
       if (!post) {
         throw new Error("Post not found");
       }
@@ -161,7 +181,20 @@ class PostService {
     }
   }
 
-  public async fetchUserPosts(userId: string): Promise<object | Error> {
+  public async fetchUserPosts(
+    userId: string,
+    queryOptions: FetchPostsInterface
+  ): Promise<object | Error> {
+    const {
+      searchQuery,
+      filter,
+      page,
+      pageSize,
+      parentsOnly,
+      deleted,
+      parentId,
+      published,
+    } = queryOptions;
     try {
       const user = await this.userModel.findById(userId);
 
@@ -169,13 +202,57 @@ class PostService {
         throw new Error("User not found");
       }
 
-      // Todo: Pagination and searching
-      const posts = await this.postModel.find({ userId }).populate({
-        path: "comments",
-        model: this.postModel,
-        select: "_id name description overview",
-      });
-      return posts;
+      // Design a filtering stratefy
+      const query: FilterQuery<typeof this.postModel> = {};
+      if (searchQuery) {
+        query.$or = [
+          { title: { $regex: new RegExp(searchQuery, "i") } },
+          { overview: { $regex: new RegExp(searchQuery, "i") } },
+          { description: { $regex: new RegExp(searchQuery, "i") } },
+        ];
+      }
+
+      if (parentsOnly) {
+        query.parentId = null;
+      }
+
+      if (parentId) {
+        query.parentId = parentId;
+      }
+
+      if (published) {
+        query.published = published;
+      }
+
+      // Do not return deleted query
+      query.deleted = false;
+
+      query.userId = userId;
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      if (filter === "newest") {
+        sortOptions = { createdAt: -1 };
+      } else {
+        sortOptions = { createdAt: 1 };
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const posts = await this.postModel
+        .find(query)
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      const totalPosts = await this.postModel.countDocuments(query);
+      const isNext = totalPosts > skipAmount + posts.length;
+      const numOfPages = Math.ceil(totalPosts / numericPageSize);
+
+      return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
       throw new Error(e.message || "Error fetching User's Posts");
@@ -200,7 +277,7 @@ class PostService {
       const query: FilterQuery<typeof this.postModel> = {};
       if (searchQuery) {
         query.$or = [
-          { name: { $regex: new RegExp(searchQuery, "i") } },
+          { title: { $regex: new RegExp(searchQuery, "i") } },
           { overview: { $regex: new RegExp(searchQuery, "i") } },
           { description: { $regex: new RegExp(searchQuery, "i") } },
         ];
@@ -244,9 +321,6 @@ class PostService {
         case "oldest":
           sortOptions = { createdAt: 1 };
           break;
-        case "recommended":
-          //todo: Decide on a recommendation algorithm
-          break;
         default:
           sortOptions = { createdAt: -1 };
           break;
@@ -262,12 +336,7 @@ class PostService {
         .populate({
           path: "userId",
           model: this.userModel,
-          select: "_id username firstName lastName",
-        })
-        .populate({
-          path: "comments",
-          model: this.postModel,
-          select: "_id name description overview",
+          select: "_id username firstName lastName imgUrl",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
@@ -276,6 +345,7 @@ class PostService {
       const totalPosts = await this.postModel.countDocuments(query);
       const isNext = totalPosts > skipAmount + posts.length;
       const numOfPages = Math.ceil(totalPosts / numericPageSize);
+
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e.message);

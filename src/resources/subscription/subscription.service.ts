@@ -2,7 +2,7 @@ import Academy from "@/resources/academy/academy.model";
 import Course from "@/resources/course/course.model";
 import Order, { IOrder } from "@/resources/order/order.model";
 import User from "@/resources/user/user.model";
-import Subscription, { ISubscription } from "@/resources/subscription/subscription.model";
+import Subscription from "@/resources/subscription/subscription.model";
 import {
   CreateSubscriptionInterface,
   FetchSubscriptionsInterface,
@@ -20,9 +20,8 @@ class SubscriptionService {
   public async createSubscription(
     subscriptionInput: CreateSubscriptionInterface,
     userId: string
-  ): Promise<ISubscription | Error> {
-    const { orderId, paymentFrequency, productId, productType } =
-      subscriptionInput;
+  ): Promise<object | Error> {
+    const { orderId, paymentFrequency, products } = subscriptionInput;
     try {
       // Ensure that this is a valid user;
       const user = await this.userModel.findById(userId);
@@ -49,44 +48,56 @@ class SubscriptionService {
         expiresAt = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
       }
 
-      // Ensure that the product exist
-      let productAmount: Number;
-      switch (productType) {
-        case "Academy":
-          const academy = await this.academyModel.findById(productId);
-          if (!academy) {
-            throw new Error("Academy not found");
-          }
-          
-          productAmount = academy.price;
-          break;
-        case "Course":
-          const course = await this.courseModel.findById(productId);
-          if (!course) {
-            throw new Error("Course not found");
-          }
-          productAmount = course.price;
-          break;
-      }
+      // Ensure that the products exist
+      const subData = await Promise.all(
+        products.map(async (product) => {
+          if (product.productType === "Academy") {
+            const academy = await this.academyModel.findById(product.productId);
+            if (!academy) {
+              throw new Error("Academy not found");
+            }
 
-      const subscription = await this.subscriptionModel.create({
-        userId,
-        orderId: orderId || null,
-        paymentFrequency,
-        productType,
-        productId,
-        expiresAt,
-        amount: productAmount,
-        productModelType: productType,
-      });
+            return {
+              userId,
+              orderId: orderId || null,
+              paymentFrequency: paymentFrequency,
+              productType: product.productType,
+              productId: product.productId,
+              expiresAt,
+              amount: academy.price,
+              productModelType: product.productType,
+            };
+          } else {
+            const course = await this.courseModel.findById(product.productId);
+            if (!course) {
+              throw new Error("Course not found");
+            }
+            return {
+              userId,
+              orderId: orderId || null,
+              paymentFrequency: paymentFrequency,
+              productType: product.productType,
+              productId: product.productId,
+              expiresAt,
+              amount: course.price,
+              productModelType: product.productType,
+            };
+          }
+        })
+      );
+
+      const subscriptions = await this.subscriptionModel.create(subData);
+
+      const subscriptionIds = subscriptions.map((item) => item._id);
 
       await this.userModel.findByIdAndUpdate(
         userId,
-        { $push: { subscriptions: subscription._id } },
+        { $push: { subscriptions: [...subscriptionIds] } },
         { new: true }
       );
+      console.log(subscriptions);
 
-      return subscription;
+      return subscriptions;
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error creating Subscription");

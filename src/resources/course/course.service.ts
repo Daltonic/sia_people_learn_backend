@@ -1,5 +1,5 @@
 import User from "@/resources/user/user.model";
-import Course from "@/resources/course/course.model";
+import Course, { ICourse } from "@/resources/course/course.model";
 import {
   CreateCourseInterface,
   FetchCoursesInterface,
@@ -270,15 +270,15 @@ class CourseService {
     }
   }
 
-  public async fetchCourse(courseId: string): Promise<object | Error> {
+  public async fetchCourse(courseId: string): Promise<ICourse | Error> {
     try {
       const course = await this.courseModel
         .findById(courseId)
-        .populate({
-          path: "tags",
-          model: this.tagModel,
-          select: "_id name",
-        })
+        // .populate({
+        //   path: "tags",
+        //   model: this.tagModel,
+        //   select: "_id name",
+        // })
         .populate({
           path: "lessons",
           model: this.lessonModel,
