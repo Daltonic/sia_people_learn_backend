@@ -95,7 +95,6 @@ class SubscriptionService {
         { $push: { subscriptions: [...subscriptionIds] } },
         { new: true }
       );
-      console.log(subscriptions);
 
       return subscriptions;
     } catch (e: any) {
