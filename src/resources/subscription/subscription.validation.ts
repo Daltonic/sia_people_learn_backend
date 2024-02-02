@@ -30,3 +30,12 @@ export const fetchSubscriptionsSchema = object({
     productType: z.enum(["Academy", "Course"]).optional(),
   }),
 });
+
+export const fetchUserSubscriptionsSchema = object({
+  query: object({
+    page: string().optional(),
+    pageSize: string().optional(),
+    filter: z.enum(["newest", "oldest"]).optional(),
+    productType: z.enum(["Academy", "Course"]).optional(),
+  }),
+});

@@ -4,6 +4,7 @@ import {
   CreateSubscriptionInterface,
   DeleteSubscriptionInterface,
   FetchSubscriptionsInterface,
+  FetchUserSubscriptionsInterface,
 } from "@/resources/subscription/subscription.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
@@ -14,6 +15,7 @@ import {
   createSubsciptionSchema,
   deleteSubscriptionSchema,
   fetchSubscriptionsSchema,
+  fetchUserSubscriptionsSchema,
 } from "@/resources/subscription/subscription.validation";
 
 class SubscriptionController implements Controller {
@@ -36,6 +38,12 @@ class SubscriptionController implements Controller {
       `${this.path}`,
       [loggedIn, validateResource(fetchSubscriptionsSchema)],
       this.fetchSubscriptions
+    );
+
+    this.router.get(
+      `${this.path}/user`,
+      [loggedIn, validateResource(fetchUserSubscriptionsSchema)],
+      this.fetchUserSubscriptions
     );
 
     this.router.delete(
@@ -104,6 +112,24 @@ class SubscriptionController implements Controller {
         queryOptions
       );
       res.status(StatusCodes.OK).json(subscriptions);
+    } catch (e: any) {
+      next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
+    }
+  };
+
+  private fetchUserSubscriptions = async (
+    req: Request<{}, {}, {}, FetchUserSubscriptionsInterface>,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    const { _id: userId } = res.locals.user;
+    const queryOptions = req.query;
+    try {
+      const result = await this.subscriptionService.fetchUserSubscriptions(
+        userId,
+        queryOptions
+      );
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
     }
