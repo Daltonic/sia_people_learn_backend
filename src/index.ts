@@ -16,6 +16,7 @@ import TestimonyController from '@/resources/testimony/testimony.controller'
 import SiteSettingsController from '@/resources/settings/settings.controller'
 import PostController from '@/resources/post/post.controller'
 import ProcessorsController from './resources/processors/processors.controller'
+import MediaController from './resources/media/media.controller'
 
 validateEnv()
 
@@ -35,6 +36,7 @@ const app = new App(
     new SiteSettingsController(),
     new PostController(),
     new ProcessorsController(),
+    new MediaController(),
   ],
   Number(process.env.PORT)
 )

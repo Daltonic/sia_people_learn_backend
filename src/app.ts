@@ -1,4 +1,5 @@
 import express, { Application, Request } from 'express'
+import fileupload from 'express-fileupload'
 import mongoose from 'mongoose'
 import Controller from '@/utils/interfaces/controller.interface'
 import helmet from 'helmet'
@@ -39,6 +40,7 @@ class App {
 
   private initialiseMiddlewares() {
     this.express.use(helmet())
+    this.express.use(fileupload())
     this.express.use(
       cors({
         origin: '*',

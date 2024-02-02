@@ -1,0 +1,16 @@
+{
+    "host": "localhost",
+    "port": 9000,
+    "siaRootDir": "dappmentors",
+    "siaBucket": "",
+    "cacheDir": "C:\\temp",
+    "dbDir": "C:\\temp",
+    "siaUrl": "http://localhost:9980",
+    "siaAPIPassword": "DArl1996@sia",
+    "generateCert": false,
+    "roomExpirationInHours": 24,
+    "uploadPassword": "",
+    "maxFileSize": 0,
+    "maxTotalFileSize": 0,
+    "maxNumberOfFiles": 0
+  }
