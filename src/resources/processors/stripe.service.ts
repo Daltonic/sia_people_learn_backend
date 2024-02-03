@@ -1,8 +1,6 @@
 require('dotenv').config()
 import log from '@/utils/logger'
-import Subscription, {
-  ISubscription,
-} from '@/resources/subscription/subscription.model'
+import { ISubscription } from '@/resources/subscription/subscription.model'
 import Course from '@/resources/course/course.model'
 import Academy from '@/resources/academy/academy.model'
 import Promo from '@/resources/promo/promo.model'
@@ -16,7 +14,6 @@ import SubscriptionService from '../subscription/subscription.service'
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 class StripeService {
-  private subscriptionModel = Subscription
   private courseModel = Course
   private academyModel = Academy
   private promoModel = Promo
@@ -27,42 +24,47 @@ class StripeService {
     checkoutInput: CheckoutProductsInterface,
     userId: string
   ): Promise<object | Error> {
-    const { subscriptionIds, paymentType, promoId } = checkoutInput
+    const { paymentType, promoId, products } = checkoutInput
 
     try {
-      // Ensure that the product exists
-      const products: ProductItem[] = []
+      // Create the subscriptions
+      const subscriptions = (await this.subscribe.createSubscription(
+        { paymentFrequency: 'One-Off', products },
+        userId
+      )) as ISubscription[]
+
       const promo = await this.promoModel.findById(promoId)
       const promoPercent: number =
         promo && promo?.validated ? Number(promo?.percentage) : 0
 
-      for (let index = 0; index < subscriptionIds.length; index++) {
-        let productItem
-        const subscription = await this.subscriptionModel.findById(
-          subscriptionIds[index]
-        )
+      const subscriptionIds: string[] = []
 
-        if (subscription?.productModelType === 'Academy') {
-          productItem = await this.academyModel.findById(
-            subscription?.productId
-          )
-        } else {
-          productItem = await this.courseModel.findById(subscription?.productId)
-        }
-
-        if (productItem) {
-          products.push({
-            name: String(productItem.name),
-            productId: String(productItem.id),
-            image: String(productItem.imageUrl),
-            amount: Number(productItem.price),
-          })
-        }
-      }
+      const stripeProducts = (await Promise.all(
+        subscriptions.map(async (sub) => {
+          subscriptionIds.push(String(sub._id))
+          if (sub.productModelType === 'Academy') {
+            const academy = await this.academyModel.findById(sub.productId)
+            return {
+              name: academy?.name,
+              productId: String(academy?._id),
+              image: String(academy?.imageUrl),
+              amount: Number(academy?.price),
+            }
+          } else {
+            const course = await this.courseModel.findById(sub.productId)
+            return {
+              name: course?.name,
+              productId: String(course?._id),
+              image: String(course?.imageUrl),
+              amount: Number(course?.price),
+            }
+          }
+        })
+      )) as ProductItem[]
 
       const customer = await stripe.customers.create({
         metadata: {
-          products: JSON.stringify(products),
+          products: JSON.stringify(stripeProducts),
           userId,
           promoId,
           paymentType,
@@ -72,7 +74,7 @@ class StripeService {
 
       const session = await this.createStripeSession(
         customer,
-        products,
+        stripeProducts,
         promoPercent
       )
 
@@ -91,19 +93,28 @@ class StripeService {
     checkoutInput: CheckoutProductInterface,
     userId: string
   ): Promise<object | Error> {
-    const {paymentFrequency, productId, paymentType } = checkoutInput
+    const { productId, paymentFrequency, paymentType } = checkoutInput
 
     try {
       // Ensure that the product exists
-      const subscription = (await this.subscribe.createSubscription(
+
+      const subscriptions = (await this.subscribe.createSubscription(
         {
           paymentFrequency: paymentFrequency || 'Month',
-          productId,
-          productType: 'Academy',
+          products: [
+            {
+              productId,
+              productType: 'Academy',
+            },
+          ],
         },
         userId
-      )) as ISubscription
+      )) as ISubscription[]
+
+      const subscription: ISubscription = subscriptions[0]
+
       const academy = await this.academyModel.findById(subscription?.productId)
+
       let product: ProductItem
 
       if (academy && academy.validity > 0) {
