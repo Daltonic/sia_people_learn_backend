@@ -28,4 +28,3 @@ export const filteredUser = (user: IUser): Partial<IUser> => {
     imgUrl,
   };
 };
-

@@ -2,10 +2,13 @@ import Academy from "@/resources/academy/academy.model";
 import Course from "@/resources/course/course.model";
 import Order, { IOrder } from "@/resources/order/order.model";
 import User from "@/resources/user/user.model";
-import Subscription from "@/resources/subscription/subscription.model";
+import Subscription, {
+  ISubscription,
+} from "@/resources/subscription/subscription.model";
 import {
   CreateSubscriptionInterface,
   FetchSubscriptionsInterface,
+  FetchUserSubscriptionsInterface,
 } from "@/resources/subscription/subscription.interface";
 import log from "@/utils/logger";
 import { FilterQuery } from "mongoose";
@@ -138,9 +141,6 @@ class SubscriptionService {
         case "oldest":
           sortOptions = { createdAt: 1 };
           break;
-        case "recommended":
-          //todo: Decide on a recommendation algorithm
-          break;
         default:
           sortOptions = { createdAt: -1 };
           break;
@@ -181,6 +181,85 @@ class SubscriptionService {
     } catch (e: any) {
       log.error(e.message);
       throw new Error(e.message || "Error fetching subscriptions");
+    }
+  }
+
+  public async fetchUserSubscriptions(
+    userId: string,
+    queryOptions: FetchUserSubscriptionsInterface
+  ): Promise<
+    | {
+        subscriptions: Partial<ISubscription>[];
+        isNext: boolean;
+        numOfPages: number;
+      }
+    | Error
+  > {
+    const { page, pageSize, filter, productType } = queryOptions;
+    try {
+      // Ensure that this is a valid user
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // Design the filtering strategy
+      const query: FilterQuery<typeof this.subscriptionModel> = {};
+      if (productType) {
+        query.productType = productType;
+      }
+
+      // Return only completed subscriptions
+      // query.status = "Completed";
+
+      // Define the sorting strategy
+      let sortOptions = {};
+      switch (filter) {
+        case "newest":
+          sortOptions = { createdAt: -1 };
+          break;
+        case "oldest":
+          sortOptions = { createdAt: 1 };
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+          break;
+      }
+
+      // Estimate the number of pages to skip based on the page number and size
+      let numericPage = page ? Number(page) : 1; // Page number should default to 1
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      const skipAmount = (numericPage - 1) * numericPageSize;
+
+      const model =
+        productType === "Academy" ? this.academyModel : this.courseModel;
+
+      const subscriptions = await this.subscriptionModel
+        .find(query)
+        .select("productType currentCourse currentLesson")
+        .populate({
+          path: "productId",
+          model,
+          populate: {
+            path: "userId",
+            model: this.userModel,
+            select: "firstName lastName",
+          },
+          select: "_id name difficulty overview description rating",
+        })
+        .skip(skipAmount)
+        .limit(numericPageSize)
+        .sort(sortOptions);
+
+      const totalSubscriptions =
+        await this.subscriptionModel.countDocuments(query);
+      const isNext = totalSubscriptions > skipAmount + subscriptions.length;
+
+      const numOfPages = Math.ceil(totalSubscriptions / numericPageSize);
+      return { subscriptions, isNext, numOfPages };
+    } catch (e: any) {
+      log.error(e.message);
+      throw new Error(e.message || "Error fetch user subscriptions");
     }
   }
 

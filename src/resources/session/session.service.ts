@@ -45,6 +45,7 @@ class SessionService {
       // Update user's lastLogin
       user.lastLogin = new Date(Date.now());
       await user.save();
+      console.log(filteredUser(user));
 
       return { user: filteredUser(user), accessToken, refreshToken };
     } catch (e: any) {
