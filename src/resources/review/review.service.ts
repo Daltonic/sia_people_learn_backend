@@ -34,7 +34,7 @@ class ReviewService {
           if (!academy) {
             throw new Error("Academy not found");
           }
-          if (!user.subscribedAcademies.includes(academy._id)) {
+          if (!user.subscriptions.includes(academy._id)) {
             throw new Error("User not subscribed to this Academy");
           }
           // If the user has already reviewed this academy, then return
@@ -48,7 +48,9 @@ class ReviewService {
             throw new Error("Course not found");
           }
 
-          if (!user.subscribedCourses?.includes(course._id)) {
+          console.log(user.subscriptions);
+          console.log(productId);
+          if (!user.subscriptions?.includes(course._id)) {
             throw new Error("User not subscribed to this Course");
           }
 
@@ -172,14 +174,15 @@ class ReviewService {
 
       const reviews = await this.reviewModel
         .find(query)
+        .select("starRating comment createdAt updatedAt")
         .populate({
           path: "userId",
           model: this.userModel,
-          select: "_id username firstName lastName",
+          select: "_id username firstName lastName imgUrl",
         })
         .populate({
           path: "productId",
-          select: "_id name difficulty overview description",
+          select: "_id name",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
