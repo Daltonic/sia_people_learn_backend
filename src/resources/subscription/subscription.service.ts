@@ -51,6 +51,9 @@ class SubscriptionService {
         expiresAt = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
       }
 
+      const academiesIds: string[] = [];
+      const coursesIds: string[] = [];
+
       // Ensure that the products exist
       const subData = await Promise.all(
         products.map(async (product) => {
@@ -59,6 +62,8 @@ class SubscriptionService {
             if (!academy) {
               throw new Error("Academy not found");
             }
+
+            academiesIds.push(academy._id);
 
             return {
               userId,
@@ -75,6 +80,7 @@ class SubscriptionService {
             if (!course) {
               throw new Error("Course not found");
             }
+            coursesIds.push(course._id);
             return {
               userId,
               orderId: orderId || null,
@@ -95,7 +101,13 @@ class SubscriptionService {
 
       await this.userModel.findByIdAndUpdate(
         userId,
-        { $push: { subscriptions: [...subscriptionIds] } },
+        {
+          $push: {
+            subscriptions: [...subscriptionIds],
+            subscribedAcademies: [...academiesIds],
+            subscribedCourses: [...coursesIds],
+          },
+        },
         { new: true }
       );
 
@@ -160,7 +172,7 @@ class SubscriptionService {
         })
         .populate({
           path: "productId",
-          select: "_id name difficulty overview description type",
+          select: "_id name difficulty overview description type imageUrl",
         })
         .populate({
           path: "orderId",
