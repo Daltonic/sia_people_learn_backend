@@ -89,7 +89,6 @@ jobs:
             username: ${{ secrets.SSH_USERNAME }}
             key: ${{ secrets.SSH_PRIVATE_KEY }}
             script: |
-              script: |
                 docker run \
                   -d \
                   --restart unless-stopped \
