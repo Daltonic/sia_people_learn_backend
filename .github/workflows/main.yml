@@ -1,0 +1,111 @@
+name: Deploy to Ubuntu VPS
+
+on:
+ push:
+    branches:
+      - main # Trigger on push to main branch
+
+jobs:
+ deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Ensure target directory exists on VPS
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ ! -d "/dockerized/containers/dappmentors_backend" ]; then
+              mkdir -p /dockerized/containers/dappmentors_backend
+            fi
+
+      - name: Copy Dockerfile to VPS
+        uses: appleboy/scp-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./"
+          target: "/dockerized/containers/dappmentors_backend"
+
+      - name: Verify Dockerfile copied
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: ls -la /dockerized/containers/dappmentors_backend
+
+      - name: Stop and remove Docker container if exists
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if docker ps -a --filter "name=dma_frontend_instance" --format "{{.Names}}" | grep -q "^dma_frontend_instance$"; then
+              echo "Stopping and removing dma_frontend_instance"
+              docker stop dma_frontend_instance || true
+              docker rm dma_frontend_instance || true
+            fi
+
+      - name: Create Docker volume if not exists
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if ! docker volume inspect dma_backend_volume > /dev/null 2>&1; then
+              docker volume create dma_backend_volume
+            fi
+
+      - name: Build Docker image
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              cd /dockerized/containers/dappmentors_backend
+              docker build -t dma_backend_image .
+      
+      - name: Run Docker container
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              docker run -d \
+                --name dma_frontend_instance \
+                -e NODE_ENV=${{secrets.NODE_ENV}} \
+                -e PORT=${{secrets.PORT}} \
+                -e MONGO_URI=${{secrets.MONGO_URI}} \
+                -e ACCESS_TOKEN_SECRET_KEY=${{secrets.ACCESS_TOKEN_SECRET_KEY}} \
+                -e REFRESH_TOKEN_SECRET_KEY=${{secrets.REFRESH_TOKEN_SECRET_KEY}} \
+                -e ORIGIN=${{secrets.ORIGIN}}:${{secrets.PORT}} \
+                -e LOG_LEVEL=${{secrets.LOG_LEVEL}} \
+                -e ACCESS_TOKEN_EXPIRES_IN=${{secrets.ACCESS_TOKEN_EXPIRES_IN}} \
+                -e MAXIMUM_INSTRUCTOR_PROMO=${{secrets.MAXIMUM_INSTRUCTOR_PROMO}} \
+                -e GOOGLE_CLIENT_ID=${{secrets.GOOGLE_CLIENT_ID}} \
+                -e GOOGLE_CLIENT_SECRET=${{secrets.GOOGLE_CLIENT_SECRET}} \
+                -e GITHUB_CLIENT_ID=${{secrets.GITHUB2_CLIENT_ID}} \
+                -e GITHUB_CLIENT_SECRET=${{secrets.GITHUB2_CLIENT_SECRET}} \
+                -e TWITTER_CONSUMER_KEY=${{secrets.TWITTER_CONSUMER_KEY}} \
+                -e TWITTER_CONSUMER_SECRET=${{secrets.TWITTER_CONSUMER_SECRET}} \
+                -e FACEBOOK_CLIENT_ID=${{secrets.FACEBOOK_CLIENT_ID}} \
+                -e FACEBOOK_CLIENT_SECRET=${{secrets.FACEBOOK_CLIENT_SECRET}} \
+                -e STRIPE_SECRET_KEY=${{secrets.STRIPE_SECRET_KEY}} \
+                -e STRIPE_ENDPOINT_SECRET=${{secrets.STRIPE_ENDPOINT_SECRET}} \
+                -e SUCCESS_URI=${{secrets.SUCCESS_URI}} \
+                -e CANCEL_URI=${{secrets.CANCEL_URI}} \
+                -e SIA_BUCKET=${{secrets.SIA_BUCKET}} \
+                -e SIA_BASE_URL=${{secrets.SIA_BASE_URL}} \
+                -e SIA_API_PASSWORD=${{secrets.SIA_API_PASSWORD}} \
+                -p ${{secrets.PORT}}:${{secrets.PORT}} \
+                -v dma_backend_volume:/data \
+                dma_backend_image
