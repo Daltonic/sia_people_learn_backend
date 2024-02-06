@@ -14,7 +14,7 @@ RUN npm ci
 RUN npm run build
 
 # Expose the port that the application will run on
-EXPOSE 9000
+EXPOSE 5000
 
 # Create a directory for persistent data storage
 VOLUME /data
