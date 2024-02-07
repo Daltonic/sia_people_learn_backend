@@ -87,7 +87,7 @@ class UserController implements Controller {
 
     this.router.get(
       `${this.path}`,
-      [isAdmin, validateResource(fetchUsersSchema)],
+      [validateResource(fetchUsersSchema)],
       this.fetchUsers
     );
   }
@@ -237,7 +237,7 @@ class UserController implements Controller {
     next: NextFunction
   ): Promise<object | void> => {
     const queryOptions = req.query;
-    const { _id: userId } = res.locals.user;
+
     try {
       const result = await this.userService.fetchUsers(queryOptions);
       res.status(StatusCodes.OK).json(result);
