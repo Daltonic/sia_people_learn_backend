@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cat << EOF > /dockerized/containers/rentered_zen/.env
+            cat << EOF > /dockerized/containers/dappmentors_backend/.env
             ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}
             ACCESS_TOKEN_SECRET_KEY=${{ secrets.ACCESS_TOKEN_SECRET_KEY }}
             ADMIN_DASHBOARD_URL=${{ secrets.ADMIN_DASHBOARD_URL }}
