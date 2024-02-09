@@ -127,6 +127,6 @@ jobs:
             key: ${{ secrets.SSH_PRIVATE_KEY }}
             script: |
                 docker run -d --restart unless-stopped --name dma_backend_instance \
-                -p 9000:9000 \
+                -p '${{ secrets.PORT }}':'${{ secrets.PORT }}' \
                 -v dma_backend_volume:/data \
                 dma_backend_image
