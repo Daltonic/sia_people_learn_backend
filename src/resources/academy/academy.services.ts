@@ -138,6 +138,8 @@ class AcademyService {
     academyId: string,
     userId: string
   ): Promise<object | Error> {
+    console.log(academyInput);
+    console.log(academyId);
     const {
       name,
       description,
@@ -293,8 +295,8 @@ class AcademyService {
         query.difficulty = difficulty
       }
 
-      if (instructor) {
-        query.userId = new Types.ObjectId(instructor)
+      if (instructor === "true") {
+        query.userId = userId;
       }
 
       // Non admins can only view approved and non-deleted academies

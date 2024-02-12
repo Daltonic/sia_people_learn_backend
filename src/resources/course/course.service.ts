@@ -342,8 +342,8 @@ class CourseService {
         query.difficulty = difficulty;
       }
 
-      if (instructor) {
-        query.userId = new Types.ObjectId(instructor);
+      if (instructor === "true") {
+        query.userId = userId;
       }
 
       if (type) {
