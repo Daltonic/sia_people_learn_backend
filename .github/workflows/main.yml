@@ -1,4 +1,4 @@
-name: Deploy to Ubuntu VPS
+name: Backend Deploy to Ubuntu VPS
 
 on:
   push:
