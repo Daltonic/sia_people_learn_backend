@@ -242,7 +242,7 @@ class StripeService {
     }
   }
 
-  public async updateProduct(product: ProductItem): Promise<any> {
+  private async updateProduct(product: ProductItem): Promise<any> {
     const taxPercentage = 2.9 // Stripe tax rate: 2.9%
     const fixedFee = 30 // Stripe fixed fee: $0.30
 
@@ -262,7 +262,7 @@ class StripeService {
     })
   }
 
-  public async createProduct(product: ProductItem): Promise<any> {
+  private async createProduct(product: ProductItem): Promise<any> {
     const taxPercentage = 2.9 // Stripe tax rate: 2.9%
     const fixedFee = 30 // Stripe fixed fee: $0.30
 
