@@ -107,7 +107,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker run -d --name dma_backend_instance -p ${{secrets.PORT}}:3000 -v dma_backend_volume:/data dma_backend_image
+            docker run -d --name dma_backend_instance -p ${{secrets.PORT}}:5000 -v dma_backend_volume:/data dma_backend_image
 
   clean_up_except_the_latest:
     needs: stop_and_start_container
