@@ -1,12 +1,12 @@
 name: Deploy to Ubuntu VPS
 
 on:
- push:
+  push:
     branches:
       - main # Trigger on push to main branch
 
 jobs:
- deploy:
+  prepare_environment:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,51 +28,105 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./"
-          target: "/dockerized/containers/dappmentors_backend"
+          source: './Dockerfile'
+          target: '/dockerized/containers/dappmentors_backend/Dockerfile'
 
-      - name: Verify Dockerfile copied
-        uses: appleboy/ssh-action@v0.1.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: ls -la /dockerized/containers/dappmentors_backend
-
-      - name: Stop and remove Docker container if exists
+      - name: Create .env file
         uses: appleboy/ssh-action@v0.1.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if docker ps -a --filter "name=dma_backend_instance" --format "{{.Names}}" | grep -q "^dma_backend_instance$"; then
-              echo "Stopping and removing dma_backend_instance"
-              docker stop dma_backend_instance || true
-              docker rm dma_backend_instance || true
-            fi
+            cat << EOF > /dockerized/containers/dappmentors_backend/.env
+            ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}
+            ACCESS_TOKEN_SECRET_KEY=${{ secrets.ACCESS_TOKEN_SECRET_KEY }}
+            ADMIN_DASHBOARD_URL=${{ secrets.ADMIN_DASHBOARD_URL }}
+            CANCEL_URI=${{ secrets.CANCEL_URI }}
+            FACEBOOK_CLIENT_ID=${{ secrets.FACEBOOK_CLIENT_ID }}
+            FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
+            GITHUB_CLIENT_ID=${{ secrets.GITHUB2_CLIENT_ID }}
+            GITHUB_CLIENT_SECRET=${{ secrets.GITHUB2_CLIENT_SECRET }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            LOG_LEVEL=${{ secrets.LOG_LEVEL }}
+            MAXIMUM_INSTRUCTOR_PROMO=${{ secrets.MAXIMUM_INSTRUCTOR_PROMO }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            NODE_ENV=${{ secrets.NODE_ENV }}
+            ORIGIN=${{ secrets.ORIGIN }}
+            PORT=${{ secrets.PORT }}
+            REFRESH_TOKEN_SECRET_KEY=${{ secrets.REFRESH_TOKEN_SECRET_KEY }}
+            SIA_API_PASSWORD=${{ secrets.SIA_API_PASSWORD }}
+            SIA_BASE_URL=${{ secrets.SIA_BASE_URL }}
+            SIA_BUCKET=${{ secrets.SIA_BUCKET }}
+            SOCIAL_REDIRECT_URL=${{ secrets.SOCIAL_REDIRECT_URL }}
+            STRIPE_ENDPOINT_SECRET=${{ secrets.STRIPE_ENDPOINT_SECRET }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            SUCCESS_URI=${{ secrets.SUCCESS_URI }}
+            TWITTER_CONSUMER_KEY=${{ secrets.TWITTER_CONSUMER_KEY }}
+            TWITTER_CONSUMER_SECRET=${{ secrets.TWITTER_CONSUMER_SECRET }}
+            EOF
 
-      - name: Create Docker volume if not exists
+  build_image:
+    needs: prepare_environment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker image with to replace the previous
         uses: appleboy/ssh-action@v0.1.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if ! docker volume inspect dma_backend_volume > /dev/null 2>&1; then
-              docker volume create dma_backend_volume
-            fi
+            export DOCKER_BUILDKIT=1
+            cd /dockerized/containers/dappmentors_backend
+            docker build -t dma_backend_image .
 
-      - name: Build Docker image
+  stop_and_start_container:
+    needs: build_image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Stop and remove old Docker containers
         uses: appleboy/ssh-action@v0.1.3
         with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_PRIVATE_KEY }}
-            script: |
-              cd /dockerized/containers/dappmentors_backend
-              docker build --pull --no-cache --rm -t dma_backend_image .
-      
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker stop dma_backend_instance || true
+            docker rm dma_backend_instance || true
+
+      - name: Run new Docker container
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker run -d --name dma_backend_instance -p ${{secrets.PORT}}:3000 -v dma_backend_volume:/data dma_backend_image
+
+  clean_up_except_the_latest:
+    needs: stop_and_start_container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Clean up previous Docker images except the latest
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Get the latest image ID
+            latest_image_id=$(docker images 'dma_backend_image*' --format "{{.ID}}" | head -n1)
+            # Remove all images except the latest one
+            docker images 'dma_backend_image*' --format "{{.ID}}" | grep -v "$latest_image_id" | xargs --no-run-if-empty docker rmi
+
       - name: Remove untagged Docker images
         uses: appleboy/ssh-action@v0.1.3
         with:
@@ -81,39 +135,3 @@ jobs:
             key: ${{ secrets.SSH_PRIVATE_KEY }}
             script: |
                 docker rmi $(docker images -f "dangling=true" -q) || true
-      
-      - name: Run Docker container
-        uses: appleboy/ssh-action@v0.1.3
-        with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_PRIVATE_KEY }}
-            script: |
-                docker run -d --restart unless-stopped --name dma_backend_instance \
-                -e NODE_ENV='${{ secrets.NODE_ENV }}' \
-                -e PORT='${{ secrets.PORT }}' \
-                -e MONGO_URI='${{ secrets.MONGO_URI }}' \
-                -e ACCESS_TOKEN_SECRET_KEY='${{ secrets.ACCESS_TOKEN_SECRET_KEY }}' \
-                -e REFRESH_TOKEN_SECRET_KEY='${{ secrets.REFRESH_TOKEN_SECRET_KEY }}' \
-                -e ORIGIN='${{ secrets.ORIGIN }}' \
-                -e LOG_LEVEL='${{ secrets.LOG_LEVEL }}' \
-                -e ACCESS_TOKEN_EXPIRES_IN='${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}' \
-                -e MAXIMUM_INSTRUCTOR_PROMO='${{ secrets.MAXIMUM_INSTRUCTOR_PROMO }}' \
-                -e GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
-                -e GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
-                -e GITHUB_CLIENT_ID='${{ secrets.GITHUB2_CLIENT_ID }}' \
-                -e GITHUB_CLIENT_SECRET='${{ secrets.GITHUB2_CLIENT_SECRET }}' \
-                -e TWITTER_CONSUMER_KEY='${{ secrets.TWITTER_CONSUMER_KEY }}' \
-                -e TWITTER_CONSUMER_SECRET='${{ secrets.TWITTER_CONSUMER_SECRET }}' \
-                -e FACEBOOK_CLIENT_ID='${{ secrets.FACEBOOK_CLIENT_ID }}' \
-                -e FACEBOOK_CLIENT_SECRET='${{ secrets.FACEBOOK_CLIENT_SECRET }}' \
-                -e STRIPE_SECRET_KEY='${{ secrets.STRIPE_SECRET_KEY }}' \
-                -e STRIPE_ENDPOINT_SECRET='${{ secrets.STRIPE_ENDPOINT_SECRET }}' \
-                -e SUCCESS_URI='${{ secrets.SUCCESS_URI }}' \
-                -e CANCEL_URI='${{ secrets.CANCEL_URI }}' \
-                -e SIA_BUCKET='${{ secrets.SIA_BUCKET }}' \
-                -e SIA_BASE_URL='${{ secrets.SIA_BASE_URL }}' \
-                -e SIA_API_PASSWORD='${{ secrets.SIA_API_PASSWORD }}' \
-                -p '${{ secrets.PORT }}':'${{ secrets.PORT }}' \
-                -v dma_backend_volume:/data \
-                dma_backend_image
