@@ -219,26 +219,11 @@ class StripeService {
   }
 
   public async manageProduct(product: ProductItem): Promise<any> {
-    try {
-      // Attempt to retrieve the product to check if it exists
-      await stripe.products.retrieve(product.ref)
-      // If the product exists, update it
+    const retrievedProduct = await stripe.products.retrieve(product.ref)
+    if (retrievedProduct) {
       return await this.updateProduct(product)
-    } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'rawType' in error &&
-        'param' in error
-      ) {
-        const err = error as { rawType: string; param: string }
-        if (err.rawType === 'invalid_request_error' && err.param === 'id') {
-          // If the product does not exist, create it
-          return await this.createProduct(product)
-        }
-      }
-      // If there's another error, rethrow it
-      throw error
+    } else if (product.interval && product.interval > 0) {
+      return await this.createProduct(product)
     }
   }
 
