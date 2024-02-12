@@ -138,6 +138,8 @@ class AcademyService {
     academyId: string,
     userId: string
   ): Promise<object | Error> {
+    console.log(academyInput);
+    console.log(academyId);
     const {
       name,
       description,
@@ -205,16 +207,16 @@ class AcademyService {
         { new: true }
       );
 
-      const product: ProductItem = {
-        name: String(name),
-        ref: String(academy.ref),
-        productId: String(academy.id),
-        image: String(imageUrl),
-        amount: Number(price),
-        interval: Number(validity),
-      };
+      // const product: ProductItem = {
+      //   name: String(name),
+      //   ref: String(academy.ref),
+      //   productId: String(academy.id),
+      //   image: String(imageUrl),
+      //   amount: Number(price),
+      //   interval: Number(validity),
+      // };
 
-      await this.processors.updateProduct(product);
+      // await this.processors.updateProduct(product);
 
       return updatedAcademy!;
     } catch (e: any) {
@@ -293,8 +295,8 @@ class AcademyService {
         query.difficulty = difficulty;
       }
 
-      if (instructor) {
-        query.userId = new Types.ObjectId(instructor);
+      if (instructor === "true") {
+        query.userId = userId;
       }
 
       // Non admins can only view approved and non-deleted academies
