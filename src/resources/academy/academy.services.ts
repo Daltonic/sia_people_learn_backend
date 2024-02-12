@@ -213,10 +213,12 @@ class AcademyService {
         productId: String(academy.id),
         image: String(imageUrl),
         amount: Number(price),
-        interval: Number(validity),
+        interval: Number(validity) || 0,
       }
 
-      await this.processors.manageProduct(product)
+      if (validity && validity > 0) {
+        await this.processors.manageProduct(product)
+      }
 
       return updatedAcademy!
     } catch (e: any) {

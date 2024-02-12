@@ -222,7 +222,7 @@ class StripeService {
     const retrievedProduct = await stripe.products.retrieve(product.ref)
     if (retrievedProduct) {
       return await this.updateProduct(product)
-    } else if (product.interval && product.interval > 0) {
+    } else {
       return await this.createProduct(product)
     }
   }
