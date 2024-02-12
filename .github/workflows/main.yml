@@ -29,7 +29,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: './'
-          target: '/dockerized/containers/dappmentors_backend/Dockerfile'
+          target: '/dockerized/containers/dappmentors_backend'
 
       - name: Create .env file
         uses: appleboy/ssh-action@v0.1.3
