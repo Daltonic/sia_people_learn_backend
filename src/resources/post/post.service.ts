@@ -194,6 +194,7 @@ class PostService {
       deleted,
       parentId,
       published,
+      category,
     } = queryOptions;
     try {
       const user = await this.userModel.findById(userId);
@@ -222,6 +223,10 @@ class PostService {
 
       if (published) {
         query.published = published;
+      }
+
+      if (category) {
+        query.category = category.toUpperCase();
       }
 
       // Do not return deleted query
@@ -271,6 +276,7 @@ class PostService {
       parentsOnly,
       deleted,
       parentId,
+      category,
     } = queryOptions;
     try {
       // Design a filtering stratefy
@@ -289,6 +295,10 @@ class PostService {
 
       if (parentId) {
         query.parentId = parentId;
+      }
+
+      if (category) {
+        query.category = category.toUpperCase();
       }
 
       // Non admins can only view published and non-deleted posts

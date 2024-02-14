@@ -40,6 +40,7 @@ export const fetchPostsSchema = object({
     deleted: z.enum(["true", "false"]).optional(),
     published: z.enum(["true", "false"]).optional(),
     parentId: string().optional(),
+    category: string().optional(),
   }),
 });
 
