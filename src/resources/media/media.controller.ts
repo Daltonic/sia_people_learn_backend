@@ -16,11 +16,11 @@ class MediaController implements Controller {
   }
 
   private initialiseRoutes() {
-    this.router.get(`${this.path}/sia/download`, [], this.sendFile);
-    this.router.post(`${this.path}/sia/upload`, [loggedIn], this.receiveFile);
+    this.router.get(`${this.path}/sia/download`, [], this.download);
+    this.router.post(`${this.path}/sia/upload`, [loggedIn], this.upload);
   }
 
-  private receiveFile = async (
+  private upload = async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -38,7 +38,7 @@ class MediaController implements Controller {
     }
   };
 
-  private sendFile = async (
+  private download = async (
     req: Request,
     res: Response,
     next: NextFunction
