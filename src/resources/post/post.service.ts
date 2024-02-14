@@ -196,6 +196,7 @@ class PostService {
       published,
       category,
     } = queryOptions;
+
     try {
       const user = await this.userModel.findById(userId);
 
@@ -249,6 +250,11 @@ class PostService {
 
       const posts = await this.postModel
         .find(query)
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id username firstName lastName imgUrl",
+        })
         .skip(skipAmount)
         .limit(numericPageSize)
         .sort(sortOptions);
@@ -260,6 +266,7 @@ class PostService {
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
+      console.log(e);
       throw new Error(e.message || "Error fetching User's Posts");
     }
   }

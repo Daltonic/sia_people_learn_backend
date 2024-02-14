@@ -207,7 +207,7 @@ class SubscriptionService {
       }
     | Error
   > {
-    const { page, pageSize, filter, productType } = queryOptions;
+    const { page, pageSize, filter, productType, searchQuery } = queryOptions;
     try {
       // Ensure that this is a valid user
       const user = await this.userModel.findById(userId);
@@ -266,7 +266,6 @@ class SubscriptionService {
       const totalSubscriptions =
         await this.subscriptionModel.countDocuments(query);
       const isNext = totalSubscriptions > skipAmount + subscriptions.length;
-
       const numOfPages = Math.ceil(totalSubscriptions / numericPageSize);
       return { subscriptions, isNext, numOfPages };
     } catch (e: any) {
