@@ -262,7 +262,6 @@ class PostService {
       const totalPosts = await this.postModel.countDocuments(query);
       const isNext = totalPosts > skipAmount + posts.length;
       const numOfPages = Math.ceil(totalPosts / numericPageSize);
-
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
