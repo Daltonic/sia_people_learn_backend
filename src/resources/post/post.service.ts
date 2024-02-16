@@ -283,7 +283,9 @@ class PostService {
       deleted,
       parentId,
       category,
+      published,
     } = queryOptions;
+    console.log(queryOptions);
     try {
       // Design a filtering stratefy
       const query: FilterQuery<typeof this.postModel> = {};
@@ -324,6 +326,9 @@ class PostService {
         } else {
           if (deleted) {
             query.deleted = deleted === "true";
+          }
+          if (published) {
+            query.published = published === "true";
           }
         }
       }

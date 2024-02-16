@@ -387,9 +387,6 @@ class CourseService {
         case "oldest":
           sortOptions = { createdAt: 1 };
           break;
-        case "recommended":
-          //todo: Decide on a recommendation algorithm
-          break;
         default:
           sortOptions = { createdAt: -1 };
           break;
