@@ -196,6 +196,7 @@ class PostService {
       published,
       category,
     } = queryOptions;
+
     try {
       const user = await this.userModel.findById(userId);
 
@@ -249,6 +250,11 @@ class PostService {
 
       const posts = await this.postModel
         .find(query)
+        .populate({
+          path: "userId",
+          model: this.userModel,
+          select: "_id username firstName lastName imgUrl",
+        })
         .skip(skipAmount)
         .limit(numericPageSize)
         .sort(sortOptions);
@@ -256,10 +262,10 @@ class PostService {
       const totalPosts = await this.postModel.countDocuments(query);
       const isNext = totalPosts > skipAmount + posts.length;
       const numOfPages = Math.ceil(totalPosts / numericPageSize);
-
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
+      console.log(e);
       throw new Error(e.message || "Error fetching User's Posts");
     }
   }
@@ -277,7 +283,9 @@ class PostService {
       deleted,
       parentId,
       category,
+      published,
     } = queryOptions;
+    console.log(queryOptions);
     try {
       // Design a filtering stratefy
       const query: FilterQuery<typeof this.postModel> = {};
@@ -318,6 +326,9 @@ class PostService {
         } else {
           if (deleted) {
             query.deleted = deleted === "true";
+          }
+          if (published) {
+            query.published = published === "true";
           }
         }
       }

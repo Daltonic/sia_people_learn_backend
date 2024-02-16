@@ -71,6 +71,7 @@ export const fetchCoursesSchema = object({
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
     deleted: z.enum(["true", "false"]).optional(),
     instructor: z.enum(["true", "false"]).optional(),
+    approved: z.enum(["true", "false"]).optional(),
     type: z.enum(["Course", "Book"]).optional(),
   }),
 });

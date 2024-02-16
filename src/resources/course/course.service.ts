@@ -325,7 +325,9 @@ class CourseService {
       deleted,
       instructor,
       type,
+      approved,
     } = queryOptions;
+
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.courseModel> = {};
@@ -370,6 +372,9 @@ class CourseService {
           if (deleted) {
             query.deleted = deleted === "true";
           }
+          if (approved) {
+            query.approved = approved === "true";
+          }
         }
       }
 
@@ -381,9 +386,6 @@ class CourseService {
           break;
         case "oldest":
           sortOptions = { createdAt: 1 };
-          break;
-        case "recommended":
-          //todo: Decide on a recommendation algorithm
           break;
         default:
           sortOptions = { createdAt: -1 };
