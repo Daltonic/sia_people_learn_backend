@@ -325,7 +325,9 @@ class CourseService {
       deleted,
       instructor,
       type,
+      approved,
     } = queryOptions;
+
     try {
       // Design the filtering strategy
       const query: FilterQuery<typeof this.courseModel> = {};
@@ -369,6 +371,9 @@ class CourseService {
         } else {
           if (deleted) {
             query.deleted = deleted === "true";
+          }
+          if (approved) {
+            query.approved = approved === "true";
           }
         }
       }
