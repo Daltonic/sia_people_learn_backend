@@ -40,7 +40,7 @@ class ReviewController implements Controller {
 
     this.router.get(
       `${this.path}`,
-      [isAdminOrInstructor, validateResource(fetchReviewsSchema)],
+      [loggedIn, validateResource(fetchReviewsSchema)],
       this.fetchReviews
     );
 
