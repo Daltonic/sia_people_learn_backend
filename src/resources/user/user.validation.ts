@@ -105,5 +105,6 @@ export const fetchUsersSchema = object({
     searchQuery: string().optional(),
     filter: z.enum(["newest", "oldest"]).optional(),
     userType: z.enum(["admin", "instructor", "user"]).optional(),
+    requestStatus: z.enum(["pending", "approved", "rejected"]).optional(),
   }),
 });

@@ -388,7 +388,9 @@ class UserService {
   public async fetchUsers(
     queryOptions: fetchUsersInterface
   ): Promise<object | Error> {
-    const { page, pageSize, searchQuery, filter, userType } = queryOptions;
+    const { page, pageSize, searchQuery, filter, userType, requestStatus } =
+      queryOptions;
+    console.log(queryOptions);
     try {
       const query: FilterQuery<typeof this.userModel> = {};
       if (searchQuery) {
@@ -401,6 +403,10 @@ class UserService {
 
       if (userType) {
         query.userType = userType;
+      }
+
+      if (requestStatus) {
+        query.requests[0].status = requestStatus;
       }
 
       let sortOptions = {};
