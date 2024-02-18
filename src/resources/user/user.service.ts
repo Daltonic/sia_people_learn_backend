@@ -238,6 +238,10 @@ class UserService {
       await request.save();
 
       user.userType = upgradeUserTo;
+      user.pendingRequests =
+        user.pendingRequests && user.pendingRequests > 0
+          ? user.pendingRequests - 1
+          : 0;
       await user.save();
 
       const userUpgradeSuccessMail = await generateEmail(
@@ -286,6 +290,10 @@ class UserService {
       }
 
       user.userType = downgradeUserTo;
+      user.pendingRequests =
+        user.pendingRequests && user.pendingRequests > 0
+          ? user.pendingRequests - 1
+          : 0;
       await user.save();
 
       return `User has been successfully downgraded to ${
@@ -335,6 +343,7 @@ class UserService {
           linkedInProfile,
           tutorialTitle,
           samplesLink,
+          $inc: { pendingRequests: 1 },
           $push: { requests: newRequest._id },
         },
         { new: true }
@@ -406,7 +415,11 @@ class UserService {
       }
 
       if (requestStatus) {
-        query.requests[0].status = requestStatus;
+        if (requestStatus === "true") {
+          query.pendingRequests = { $gt: 0 };
+        } else {
+          query.pendingRequests = { $eq: 0 };
+        }
       }
 
       let sortOptions = {};

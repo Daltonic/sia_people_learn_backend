@@ -29,7 +29,8 @@ export interface IUser extends Document {
   linkedInProfile?: string;
   tutorialTitle?: string;
   samplesLink?: string;
-  specialty?: string;
+  specialty?: string | null;
+  pendingRequests?: number | null;
   validatePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -63,6 +64,7 @@ const UserSchema = new Schema<IUser>(
     tutorialTitle: { type: String },
     samplesLink: { type: String },
     specialty: { type: String },
+    pendingRequests: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
