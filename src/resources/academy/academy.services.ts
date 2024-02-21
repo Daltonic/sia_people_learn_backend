@@ -138,8 +138,6 @@ class AcademyService {
     academyId: string,
     userId: string
   ): Promise<object | Error> {
-    console.log(academyInput);
-    console.log(academyId);
     const {
       name,
       description,
