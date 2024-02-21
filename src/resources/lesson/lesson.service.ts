@@ -207,7 +207,6 @@ class LessonService {
       const lessons = await this.lessonModel
         .find({ courseId })
         .sort({ order: 1 });
-
       return lessons;
     } catch (e: any) {
       log.error(e.message);
