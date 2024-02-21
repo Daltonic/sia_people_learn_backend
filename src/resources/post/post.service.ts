@@ -265,7 +265,7 @@ class PostService {
       return { posts, isNext, numOfPages };
     } catch (e: any) {
       log.error(e);
-      console.log(e);
+
       throw new Error(e.message || "Error fetching User's Posts");
     }
   }
@@ -285,7 +285,7 @@ class PostService {
       category,
       published,
     } = queryOptions;
-    console.log(queryOptions);
+
     try {
       // Design a filtering stratefy
       const query: FilterQuery<typeof this.postModel> = {};
