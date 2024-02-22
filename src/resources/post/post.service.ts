@@ -70,6 +70,7 @@ class PostService {
     userId: string
   ): Promise<object | Error> {
     const { title, overview, description, imageUrl, category } = postInput;
+
     try {
       if (!title && !overview && !description && !imageUrl && !category) {
         throw new Error("No data to update");
@@ -83,6 +84,7 @@ class PostService {
 
       // Ensure that the post exists
       const post = await this.postModel.findById(postId);
+
       if (!post) {
         throw new Error("Post not found");
       }
@@ -97,12 +99,11 @@ class PostService {
       const updatedPost = await this.postModel.findByIdAndUpdate(
         postId,
         {
-          name: title || post.title,
+          title: title || post.title,
           description: description || post.description,
           overview: overview || post.overview,
           imageUrl: imageUrl || post.imageUrl,
           category: category?.toUpperCase() || post.category,
-          published: user.userType === "admin",
         },
         { new: true }
       );
