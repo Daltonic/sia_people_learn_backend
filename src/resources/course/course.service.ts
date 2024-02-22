@@ -408,7 +408,7 @@ class CourseService {
         .limit(numericPageSize)
         .sort(sortOptions)
         .select(
-          "name price description overview difficulty duration lessonsCount rating reviewsCount requirements highlights approved deleted"
+          "name imageUrl price description overview difficulty duration lessonsCount rating reviewsCount requirements highlights approved deleted"
         );
 
       // Find out if there is a next page
