@@ -4,6 +4,7 @@ import WishlistService from "@/resources/wishlist/wishlist.service";
 import {
   CreateWishlistInterface,
   DeleteWishlistInterface,
+  FetchWishtListsInterface,
 } from "@/resources/wishlist/wishlist.interface";
 import HttpException from "@/utils/exceptions/HttpException";
 import { StatusCodes } from "http-status-codes";
@@ -11,6 +12,7 @@ import { loggedIn, validateResource } from "@/middlewares/index";
 import {
   createWishlistSchema,
   deleteWishlistSchema,
+  fetchWishlistSchema,
 } from "@/resources/wishlist/wishlist.validation";
 
 class WishlistController implements Controller {
@@ -35,7 +37,11 @@ class WishlistController implements Controller {
       this.deleteWishlist
     );
 
-    this.router.get(`${this.path}`, loggedIn, this.fetchWishlists);
+    this.router.get(
+      `${this.path}`,
+      [loggedIn, validateResource(fetchWishlistSchema)],
+      this.fetchWishlists
+    );
   }
 
   private createWishlist = async (
@@ -76,13 +82,17 @@ class WishlistController implements Controller {
   };
 
   private fetchWishlists = async (
-    req: Request,
+    req: Request<{}, {}, {}, FetchWishtListsInterface>,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
     const { _id: userId } = res.locals.user;
+    const queryOptions = req.query;
     try {
-      const wishlists = await this.wishlistService.fetchWishlists(userId);
+      const wishlists = await this.wishlistService.fetchWishlists(
+        userId,
+        queryOptions
+      );
       res.status(StatusCodes.OK).json(wishlists);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

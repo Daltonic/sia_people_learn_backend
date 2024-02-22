@@ -1,9 +1,13 @@
 import WishList from "@/resources/wishlist/wishlist.model";
 import User from "@/resources/user/user.model";
-import { CreateWishlistInterface } from "@/resources/wishlist/wishlist.interface";
+import {
+  CreateWishlistInterface,
+  FetchWishtListsInterface,
+} from "@/resources/wishlist/wishlist.interface";
 import log from "@/utils/logger";
 import Course from "@/resources/course/course.model";
 import Academy from "@/resources/academy/academy.model";
+import { FilterQuery } from "mongoose";
 
 class WishlistService {
   private wishlistModel = WishList;
@@ -72,11 +76,19 @@ class WishlistService {
     }
   }
 
-  public async fetchWishlists(userId: string): Promise<object | Error> {
+  public async fetchWishlists(
+    userId: string,
+    queryOptions: FetchWishtListsInterface
+  ): Promise<object | Error> {
+    const { productType } = queryOptions;
+    const query: FilterQuery<typeof this.wishlistModel> = {};
+    query.userId = userId;
+    if (productType) {
+      query.productType = productType;
+    }
     try {
-      //todo: Filtering and search, populate the product
       const wishlists = await this.wishlistModel
-        .find({ userId })
+        .find(query)
         .populate({
           path: "userId",
           model: this.userModel,
