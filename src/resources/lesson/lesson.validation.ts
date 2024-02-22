@@ -4,9 +4,9 @@ export const createLessonSchema = object({
   body: object({
     courseId: string({ required_error: "Course ID is required" }),
     title: string({ required_error: "Lesson title is required" }),
-    overview: string({ required_error: "Lesson overview is required" }),
     description: string({ required_error: "Lesson description is required" }),
     duration: number({ required_error: "Lesson duration is required" }),
+    overview: string().optional(),
     imageUrl: string().optional(),
     videoUrl: string().optional(),
     downloadableUrl: string().optional(),
