@@ -92,11 +92,12 @@ class WishlistService {
         .populate({
           path: "userId",
           model: this.userModel,
-          select: "_id firstName lastName username",
+          select: "_id firstName lastName username imgUrl",
         })
         .populate({
           path: "productId",
-          select: "name price description overview difficulty duration",
+          select:
+            "name price description overview difficulty duration imageUrl rating reviews",
         });
 
       return wishlists;
