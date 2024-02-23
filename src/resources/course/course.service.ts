@@ -108,7 +108,7 @@ class CourseService {
             { name: { $regex: new RegExp(`^${tag}$`, "i") } },
             {
               $setOnInsert: { name: tag.toUpperCase() },
-              $push: { academies: newCourse._id },
+              $push: { courses: newCourse._id },
             },
             { upsert: true, new: true }
           );
@@ -274,11 +274,11 @@ class CourseService {
     try {
       const course = await this.courseModel
         .findById(courseId)
-        // .populate({
-        //   path: "tags",
-        //   model: this.tagModel,
-        //   select: "_id name",
-        // })
+        .populate({
+          path: "tags",
+          model: this.tagModel,
+          select: "_id name",
+        })
         .populate({
           path: "lessons",
           model: this.lessonModel,
