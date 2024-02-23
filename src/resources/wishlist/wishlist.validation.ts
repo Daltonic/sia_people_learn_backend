@@ -14,3 +14,9 @@ export const deleteWishlistSchema = object({
     wishlistId: string({ required_error: "Wishlist ID is required" }),
   }),
 });
+
+export const fetchWishlistSchema = object({
+  query: object({
+    productType: z.enum(["Course", "Academy"]).optional(),
+  }),
+});
