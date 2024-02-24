@@ -82,7 +82,6 @@ class CourseService {
           userId,
           requirements,
           highlights,
-          tags,
           imageUrl: imageUrl || null,
         };
       } else {
@@ -92,7 +91,6 @@ class CourseService {
           description,
           overview,
           userId,
-          tags,
           type,
           imageUrl: imageUrl || null,
         };

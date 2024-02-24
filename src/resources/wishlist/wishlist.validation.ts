@@ -17,6 +17,6 @@ export const deleteWishlistSchema = object({
 
 export const fetchWishlistSchema = object({
   query: object({
-    productType: z.enum(["Course", "Academy"]).optional(),
+    productType: z.enum(["Course", "Academy"]),
   }),
 });

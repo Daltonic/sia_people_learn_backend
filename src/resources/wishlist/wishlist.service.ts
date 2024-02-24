@@ -44,7 +44,6 @@ class WishlistService {
         userId,
         productModelType: productType,
       });
-
       return wishlist;
     } catch (e: any) {
       log.error(e.message);
@@ -82,23 +81,26 @@ class WishlistService {
   ): Promise<object | Error> {
     const { productType } = queryOptions;
     const query: FilterQuery<typeof this.wishlistModel> = {};
+
     query.userId = userId;
-    if (productType) {
-      query.productType = productType;
-    }
+
+    query.productType = productType;
+
+    const model =
+      productType === "Academy" ? this.academyModel : this.courseModel;
+
     try {
-      const wishlists = await this.wishlistModel
-        .find(query)
-        .populate({
+      const wishlists = await this.wishlistModel.find(query).populate({
+        path: "productId",
+        model: model,
+        populate: {
           path: "userId",
           model: this.userModel,
-          select: "_id firstName lastName username imgUrl",
-        })
-        .populate({
-          path: "productId",
-          select:
-            "name price description overview difficulty duration imageUrl rating reviews",
-        });
+          select: "firstName lastName username _id imgUrl",
+        },
+        select:
+          "_id name price description overview difficulty duration imageUrl rating reviews",
+      });
 
       return wishlists;
     } catch (e: any) {
