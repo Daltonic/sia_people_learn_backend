@@ -424,7 +424,7 @@ class CourseService {
     courseId: string,
     userId: string,
     submitted: boolean
-  ): Promise<string | Error> {
+  ): Promise<ICourse | Error> {
     try {
       const course = await this.courseModel.findById(courseId);
 
@@ -441,8 +441,8 @@ class CourseService {
         throw new Error("User not authorised");
       }
 
-      if (course.approved) {
-        return "Course already approved";
+      if (course.submitted) {
+        return course;
       }
 
       course.submitted = submitted;
@@ -487,7 +487,7 @@ class CourseService {
         log.info("Approval mail could not be sent");
       }
 
-      return "Course has been submitted";
+      return course;
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error submitting Course");
