@@ -201,12 +201,12 @@ class CourseController implements Controller {
     const { _id: userId } = res.locals.user;
 
     try {
-      const message = await this.courseService.submitCourse(
+      const result = await this.courseService.submitCourse(
         courseId,
         userId,
         submitted
       );
-      res.status(StatusCodes.OK).send(message);
+      res.status(StatusCodes.OK).json(result);
     } catch (e: any) {
       if (e.message === "User not authorised") {
         next(new HttpException(StatusCodes.UNAUTHORIZED, e.message));

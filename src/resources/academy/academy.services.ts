@@ -58,7 +58,7 @@ class AcademyService {
         price,
         difficulty,
         imageUrl: imageUrl || null,
-        validity: validity || 0,
+        validity: validity,
         highlights: highlights || [],
         requirements: requirements || [],
         userId: userId,
@@ -375,7 +375,7 @@ class AcademyService {
   public async submitAcademy(
     academyId: string,
     userId: string
-  ): Promise<string | Error> {
+  ): Promise<IAcademy | Error> {
     try {
       const academy = await this.academyModel.findById(academyId);
       if (!academy) {
@@ -392,7 +392,7 @@ class AcademyService {
       }
 
       if (academy.submitted) {
-        return "Academy already submitted for approval";
+        return academy;
       }
 
       academy.submitted = true;
@@ -435,7 +435,7 @@ class AcademyService {
         log.info("Approval mail could not be sent");
       }
 
-      return "Academy has been successfully submitted for approval";
+      return academy;
     } catch (e: any) {
       log.error(e.message);
       throw new Error("Error submitting Course");

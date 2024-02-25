@@ -7,7 +7,7 @@ export const createAcademySchema = object({
     overview: string({ required_error: "Academy overview is required." }),
     imageUrl: string().optional(),
     price: number({ required_error: "Academy price is required." }).positive(),
-    validity: number().optional(),
+    validity: number(),
     difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
     orderCount: number().optional(),
     requirements: string({
