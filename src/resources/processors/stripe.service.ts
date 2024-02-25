@@ -219,8 +219,7 @@ class StripeService {
   }
 
   public async manageProduct(product: ProductItem): Promise<any> {
-    const retrievedProduct = await stripe.products.retrieve(product.ref)
-    if (retrievedProduct) {
+    if (product.ref !== 'null') {
       return await this.updateProduct(product)
     } else {
       return await this.createProduct(product)
