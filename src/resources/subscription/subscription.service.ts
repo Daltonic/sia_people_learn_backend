@@ -28,6 +28,7 @@ class SubscriptionService {
     try {
       // Ensure that this is a valid user;
       const user = await this.userModel.findById(userId);
+
       if (!user) {
         throw new Error("User not found");
       }
@@ -88,6 +89,7 @@ class SubscriptionService {
               productType: product.productType,
               productId: product.productId,
               expiresAt,
+              status: course.price === 0 ? "Completed" : "Pending",
               amount: course.price,
               productModelType: product.productType,
             };
@@ -143,6 +145,10 @@ class SubscriptionService {
       if (status) {
         query.status = status;
       }
+
+      // Return only subscriptions that are yet to expire
+      console.log(Date.now());
+      query.expiresAt = { $gte: Date.now() };
 
       // Define the sorting strategy
       let sortOptions = {};
@@ -221,6 +227,10 @@ class SubscriptionService {
         query.productType = productType;
       }
 
+      // Return only subscriptions that are yet to expire
+
+      query.expiresAt = { $gte: Date.now() };
+
       // Return only completed subscriptions
       // query.status = "Completed";
 
@@ -257,7 +267,7 @@ class SubscriptionService {
             model: this.userModel,
             select: "firstName lastName",
           },
-          select: "_id name difficulty overview description rating",
+          select: "_id name difficulty overview description rating imageUrl",
         })
         .skip(skipAmount)
         .limit(numericPageSize)

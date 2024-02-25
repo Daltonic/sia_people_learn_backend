@@ -5,10 +5,12 @@ import {
   UpdateLessonInterface,
 } from "@/resources/lesson/lesson.interface";
 import log from "@/utils/logger";
+import Subscription from "@/resources/subscription/subscription.model";
 
 class LessonService {
   private lessonModel = Lesson;
   private courseModel = Course;
+  private subscriptionModel = Subscription;
 
   public async createLesson(
     lessonInput: CreateLessonInterface,
@@ -188,8 +190,26 @@ class LessonService {
     }
   }
 
-  public async fetchLesson(lessonId: string): Promise<object | Error> {
+  public async fetchLesson(
+    lessonId: string,
+    courseId: string,
+    userId: string
+  ): Promise<object | Error> {
     try {
+      // Find the subscription and check that the subscription is still active
+      const subscription = await this.subscriptionModel.findOne({
+        userId,
+        productId: courseId,
+      });
+
+      if (!subscription) {
+        throw new Error("User does not have a valid subscription");
+      }
+
+      if (subscription.expiresAt < new Date(Date.now())) {
+        throw new Error("User does not have a valid subscription");
+      }
+
       const lesson = await this.lessonModel.findById(lessonId);
       if (!lesson) {
         throw new Error("Lesson not found");

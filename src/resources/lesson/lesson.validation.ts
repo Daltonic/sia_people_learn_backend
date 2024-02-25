@@ -40,6 +40,9 @@ export const fetchLessonSchema = object({
   params: object({
     lessonId: string({ required_error: "Lesson ID is required" }),
   }),
+  query: object({
+    courseId: string({ required_error: "Course ID is required" }),
+  }),
 });
 
 export const fetchLessonsSchema = object({

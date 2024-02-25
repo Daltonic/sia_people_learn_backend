@@ -29,7 +29,7 @@ export interface ICourse extends Document {
 
 const CourseSchema = new Schema<ICourse>(
   {
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     price: { type: Number, required: true },
     description: { type: String, required: true },
     overview: { type: String, required: true },

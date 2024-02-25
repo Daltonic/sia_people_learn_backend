@@ -166,6 +166,7 @@ class PostService {
           path: "comments",
           model: this.postModel,
           select: "_id name description overview",
+          options: { sort: { createdAt: -1 } },
         })
         .populate({
           path: "userId",
