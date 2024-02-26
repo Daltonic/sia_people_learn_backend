@@ -257,7 +257,7 @@ class SubscriptionService {
             model: this.userModel,
             select: "firstName lastName",
           },
-          select: "_id name difficulty overview description rating",
+          select: "_id name difficulty overview description rating imageUrl",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
