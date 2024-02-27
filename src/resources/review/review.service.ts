@@ -39,7 +39,8 @@ class ReviewService {
           }
           // If the user has already reviewed this academy, then return
           if (user.reviewedAcademies.includes(academy._id)) {
-            throw new Error("User already reviewed this Academy");
+            return { success: "Already existing" };
+            // throw new Error("User already reviewed this Academy");
           }
           break;
         case "Course":
@@ -54,7 +55,8 @@ class ReviewService {
 
           // If the user has already reviewed this course, then return
           if (user.reviewedCourses.includes(course._id)) {
-            throw new Error("User already reviewed this Course");
+            return { success: "Already existing" };
+            // throw new Error("User already reviewed this Course");
           }
           break;
       }
@@ -75,9 +77,19 @@ class ReviewService {
           { $push: { reviewedAcademies: productId } },
           { new: true }
         );
+
+        await this.academyModel.findByIdAndUpdate(productId, {
+          $push: { reviews: review._id },
+          $inc: { reviewsCount: 1 },
+        });
       } else {
         await this.userModel.findByIdAndUpdate(userId, {
           $push: { reviewedCourses: productId },
+        });
+
+        await this.courseModel.findByIdAndUpdate(productId, {
+          $push: { reviews: review._id },
+          $inc: { reviewsCount: 1 },
         });
       }
 
