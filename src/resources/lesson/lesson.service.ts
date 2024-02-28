@@ -203,20 +203,20 @@ class LessonService {
       const course = await this.courseModel.findById(lesson.courseId);
 
       // If the current user is not an instructor, then check that user has valid subscription to this course.
-      if (String(course?.userId) === userId) {
-        const subscription = await this.subscriptionModel.findOne({
-          userId,
-          productId: course?._id,
-        });
+      // if (String(course?.userId) === userId) {
+      //   const subscription = await this.subscriptionModel.findOne({
+      //     userId,
+      //     productId: course?._id,
+      //   });
 
-        if (!subscription) {
-          throw new Error("User does not have a valid subscription");
-        }
+      //   if (!subscription) {
+      //     throw new Error("User does not have a valid subscription");
+      //   }
 
-        if (subscription.expiresAt < new Date(Date.now())) {
-          throw new Error("User does not have a valid subscription");
-        }
-      }
+      //   if (subscription.expiresAt < new Date(Date.now())) {
+      //     throw new Error("User does not have a valid subscription");
+      //   }
+      // }
 
       return lesson;
     } catch (e: any) {
