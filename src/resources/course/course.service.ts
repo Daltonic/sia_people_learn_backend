@@ -268,10 +268,10 @@ class CourseService {
     }
   }
 
-  public async fetchCourse(courseId: string): Promise<ICourse | Error> {
+  public async fetchCourse(name: string): Promise<ICourse | Error> {
     try {
       const course = await this.courseModel
-        .findById(courseId)
+        .findOne({ name })
         .populate({
           path: "tags",
           model: this.tagModel,

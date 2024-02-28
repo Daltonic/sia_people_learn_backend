@@ -157,11 +157,11 @@ class PostService {
     }
   }
 
-  public async fetchPost(postId: string): Promise<object | Error> {
+  public async fetchPost(title: string): Promise<object | Error> {
     try {
       // Ensure that the post exists
       const post = await this.postModel
-        .findById(postId)
+        .findOne({ title })
         .populate({
           path: "comments",
           model: this.postModel,

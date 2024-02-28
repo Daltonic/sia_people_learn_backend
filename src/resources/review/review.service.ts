@@ -71,27 +71,27 @@ class ReviewService {
       });
 
       // Save the product in the user's reviewedAcademy or reviewedCourse collection
-      if (productType === "Academy") {
-        await this.userModel.findByIdAndUpdate(
-          userId,
-          { $push: { reviewedAcademies: productId } },
-          { new: true }
-        );
+      // if (productType === "Academy") {
+      //   await this.userModel.findByIdAndUpdate(
+      //     userId,
+      //     { $push: { reviewedAcademies: productId } },
+      //     { new: true }
+      //   );
 
-        await this.academyModel.findByIdAndUpdate(productId, {
-          $push: { reviews: review._id },
-          $inc: { reviewsCount: 1 },
-        });
-      } else {
-        await this.userModel.findByIdAndUpdate(userId, {
-          $push: { reviewedCourses: productId },
-        });
+      //   await this.academyModel.findByIdAndUpdate(productId, {
+      //     $push: { reviews: review._id },
+      //     $inc: { reviewsCount: 1 },
+      //   });
+      // } else {
+      //   await this.userModel.findByIdAndUpdate(userId, {
+      //     $push: { reviewedCourses: productId },
+      //   });
 
-        await this.courseModel.findByIdAndUpdate(productId, {
-          $push: { reviews: review._id },
-          $inc: { reviewsCount: 1 },
-        });
-      }
+      //   await this.courseModel.findByIdAndUpdate(productId, {
+      //     $push: { reviews: review._id },
+      //     $inc: { reviewsCount: 1 },
+      //   });
+      // }
 
       return review;
     } catch (e: any) {
@@ -150,13 +150,13 @@ class ReviewService {
   public async fetchReviews(
     queryOptions: FetchReviewsInterface
   ): Promise<object | Error> {
-    const { productId, productType, approved, page, pageSize, filter } =
+    const { name, productType, approved, page, pageSize, filter } =
       queryOptions;
     try {
       const query: FilterQuery<typeof this.reviewModel> = {};
 
       // Add the productId and product type to the query
-      query.productId = productId;
+      query.name = name;
       query.productType = productType;
 
       // If the user specifies the approved field, then add that query

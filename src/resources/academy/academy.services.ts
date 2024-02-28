@@ -225,10 +225,10 @@ class AcademyService {
     }
   }
 
-  public async fetchAcademy(academyId: string): Promise<IAcademy | Error> {
+  public async fetchAcademy(name: string): Promise<IAcademy | Error> {
     try {
       const academy = await this.academyModel
-        .findById(academyId)
+        .findOne({ name })
         .populate({
           path: "tags",
           model: this.tagModel,
