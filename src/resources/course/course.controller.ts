@@ -59,7 +59,7 @@ class CourseController implements Controller {
     );
 
     this.router.get(
-      `${this.path}/:courseId`,
+      `${this.path}/:name`,
       [validateResource(fetchCourseSchema)],
       this.fetchCourse
     );
@@ -159,10 +159,10 @@ class CourseController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
-    const { courseId } = req.params;
+    const { name } = req.params;
 
     try {
-      const course = await this.courseService.fetchCourse(courseId);
+      const course = await this.courseService.fetchCourse(name);
       res.status(StatusCodes.OK).json(course);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

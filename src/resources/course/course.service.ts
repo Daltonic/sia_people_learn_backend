@@ -16,6 +16,7 @@ import {
   productApprovalFeedback,
   productApprovalRequestMail,
 } from "@/utils/templates/mails";
+import generateAlphanum from "@/utils/generateAlphanum";
 
 class CourseService {
   private userModel = User;
@@ -69,11 +70,18 @@ class CourseService {
         throw new Error("Content creator not found");
       }
 
+      // Search the DB if a course exists with this name
+      let dbName = name;
+      const exisitingCourse = await this.courseModel.findOne({ name });
+      if (exisitingCourse) {
+        dbName = `${name}_${generateAlphanum(6)}`;
+      }
+
       // Get the newCourse object;
       let courseData: object;
       if (type === "Course") {
         courseData = {
-          name,
+          name: dbName,
           price,
           type,
           description,
@@ -86,7 +94,7 @@ class CourseService {
         };
       } else {
         courseData = {
-          name,
+          name: dbName,
           price,
           description,
           overview,
@@ -268,10 +276,10 @@ class CourseService {
     }
   }
 
-  public async fetchCourse(courseId: string): Promise<ICourse | Error> {
+  public async fetchCourse(name: string): Promise<ICourse | Error> {
     try {
       const course = await this.courseModel
-        .findById(courseId)
+        .findOne({ name })
         .populate({
           path: "tags",
           model: this.tagModel,

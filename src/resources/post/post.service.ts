@@ -7,6 +7,7 @@ import {
 import Post, { IPost } from "@/resources/post/post.model";
 import log from "@/utils/logger";
 import { FilterQuery, Schema } from "mongoose";
+import generateAlphanum from "@/utils/generateAlphanum";
 
 class PostService {
   private postModel = Post;
@@ -35,9 +36,16 @@ class PostService {
         }
       }
 
+      // Find out if a post with this new title exists
+      let dbTitle = title;
+      const existingPost = await this.postModel.findOne({ title });
+      if (existingPost) {
+        dbTitle = `${title}_${generateAlphanum(6)}`;
+      }
+
       // Create the post
       const post = await this.postModel.create({
-        title,
+        title: title,
         description,
         overview,
         userId,
@@ -157,11 +165,11 @@ class PostService {
     }
   }
 
-  public async fetchPost(postId: string): Promise<object | Error> {
+  public async fetchPost(title: string): Promise<object | Error> {
     try {
       // Ensure that the post exists
       const post = await this.postModel
-        .findById(postId)
+        .findOne({ title })
         .populate({
           path: "comments",
           model: this.postModel,

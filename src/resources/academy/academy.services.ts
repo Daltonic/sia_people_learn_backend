@@ -18,6 +18,7 @@ import {
 } from "@/utils/templates/mails";
 import StripeService from "@/resources/processors/stripe.service";
 import { ProductItem } from "../processors/processors.interface";
+import generateAlphanum from "@/utils/generateAlphanum";
 
 class AcademyService {
   private userModel = User;
@@ -50,9 +51,16 @@ class AcademyService {
         throw new Error("Content creator not found");
       }
 
+      // Search the DB is an academy with this name exists
+      let dbName = name;
+      const existingAcademy = await this.academyModel.findOne({ name });
+      if (existingAcademy) {
+        dbName = `${name}_${generateAlphanum(6)}`;
+      }
+
       // Create the Academy
       const academy = await this.academyModel.create({
-        name,
+        name: dbName,
         description,
         overview,
         price,
@@ -225,10 +233,10 @@ class AcademyService {
     }
   }
 
-  public async fetchAcademy(academyId: string): Promise<IAcademy | Error> {
+  public async fetchAcademy(name: string): Promise<IAcademy | Error> {
     try {
       const academy = await this.academyModel
-        .findById(academyId)
+        .findOne({ name })
         .populate({
           path: "tags",
           model: this.tagModel,

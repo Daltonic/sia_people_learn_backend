@@ -43,7 +43,7 @@ export const deleteCourseSchema = object({
 
 export const fetchCourseSchema = object({
   params: object({
-    courseId: string({ required_error: "Course ID is required" }),
+    name: string({ required_error: "Course name is required" }),
   }),
 });
 
