@@ -24,6 +24,7 @@ export interface IAcademy extends Document {
   updatedAt: Date;
   tags: Schema.Types.ObjectId[];
   userId: Schema.Types.ObjectId;
+  slug: string;
 }
 
 const AcademySchema = new Schema<IAcademy>(
@@ -52,6 +53,7 @@ const AcademySchema = new Schema<IAcademy>(
     requirements: [{ type: String }],
     tags: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
     userId: { type: Schema.Types.ObjectId, required: true },
+    slug: { type: String },
   },
   { timestamps: true }
 );

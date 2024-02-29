@@ -281,7 +281,8 @@ class CourseService {
           path: "lessons",
           model: this.lessonModel,
           options: { sort: { order: 1 } },
-          select: "_id title description duration imageUrl videoUrl downloadableUrl",
+          select:
+            "_id title description duration imageUrl videoUrl downloadableUrl",
         })
         .populate({
           path: "userId",
@@ -392,7 +393,7 @@ class CourseService {
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1
-      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
+      let numericPageSize = pageSize ? Number(pageSize) : 1000; // Page size should default to 10
       const skipAmount = (numericPage - 1) * numericPageSize;
 
       const courses = await this.courseModel
@@ -406,7 +407,7 @@ class CourseService {
         .limit(numericPageSize)
         .sort(sortOptions)
         .select(
-          "name imageUrl price description overview difficulty duration lessons rating reviewsCount requirements highlights approved submitted deleted type"
+          "name imageUrl price description overview difficulty duration lessons rating reviewsCount requirements highlights approved submitted deleted type slug"
         );
 
       // Find out if there is a next page

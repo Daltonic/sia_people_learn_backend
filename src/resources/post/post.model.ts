@@ -14,6 +14,7 @@ export interface IPost extends Document {
   published: boolean;
   createdAt: Date;
   updatedAt: Date;
+  slug: string;
 }
 
 const PostSchema = new Schema<IPost>(
@@ -29,6 +30,7 @@ const PostSchema = new Schema<IPost>(
     comments: [{ type: Schema.Types.ObjectId, ref: this }],
     commentsCount: { type: Number, default: 0 },
     published: { type: Boolean, default: false },
+    slug: { type: String },
   },
   { timestamps: true }
 );

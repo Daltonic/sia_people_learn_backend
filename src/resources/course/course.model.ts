@@ -25,6 +25,7 @@ export interface ICourse extends Document {
   lessons?: Schema.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+  slug: string;
 }
 
 const CourseSchema = new Schema<ICourse>(
@@ -57,6 +58,7 @@ const CourseSchema = new Schema<ICourse>(
     tags: [{ type: String }],
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     lessons: [{ type: Schema.Types.ObjectId, ref: "Lesson" }],
+    slug: { type: String },
   },
   { timestamps: true }
 );

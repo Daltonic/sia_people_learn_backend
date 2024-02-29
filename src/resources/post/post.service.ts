@@ -350,7 +350,7 @@ class PostService {
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1
-      let numericPageSize = pageSize ? Number(pageSize) : 5; // Page size should default to 10
+      let numericPageSize = pageSize ? Number(pageSize) : 1000; // Page size should default to 10
       const skipAmount = (numericPage - 1) * numericPageSize;
 
       const posts = await this.postModel
