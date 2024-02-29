@@ -281,7 +281,7 @@ class CourseService {
           path: "lessons",
           model: this.lessonModel,
           options: { sort: { order: 1 } },
-          select: "_id title duration imageUrl videoUrl downloadableUrl",
+          select: "_id title description duration imageUrl videoUrl downloadableUrl",
         })
         .populate({
           path: "userId",
