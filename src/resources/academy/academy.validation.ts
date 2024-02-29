@@ -42,7 +42,7 @@ export const updateAcademySchema = object({
 
 export const fetchAcademySchema = object({
   params: object({
-    academyId: string({ required_error: "Academy ID is required." }),
+    slug: string({ required_error: "Slug is required." }),
   }),
 });
 

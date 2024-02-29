@@ -44,7 +44,7 @@ class PostController implements Controller {
     );
 
     this.router.get(
-      `${this.path}/:postId`,
+      `${this.path}/:slug`,
       validateResource(fetchPostSchema),
       this.fetchPost
     );
@@ -119,10 +119,10 @@ class PostController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
-    const { postId } = req.params;
+    const { slug } = req.params;
 
     try {
-      const post = await this.postService.fetchPost(postId);
+      const post = await this.postService.fetchPost(slug);
       res.status(StatusCodes.OK).json(post);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));
