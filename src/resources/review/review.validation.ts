@@ -23,7 +23,7 @@ export const approveReviewSchema = object({
 
 export const fetchReviewsSchema = object({
   query: object({
-    productId: string({ required_error: "Product Id is required" }),
+    productSlug: string({ required_error: "Slug is required" }),
     productType: z.enum(["Course", "Academy"], {
       required_error: "Product Type is required",
     }),

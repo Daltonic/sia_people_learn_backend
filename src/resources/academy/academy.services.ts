@@ -6,7 +6,7 @@ import {
   FetchAcademiesInterface,
   UpdateAcademyInterface,
 } from "@/resources/academy/academy.interface";
-import { log } from "@/utils/index";
+import { generateAlphanumeric, log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
 import { FilterQuery, Types } from "mongoose";
 import Review from "@/resources/review/review.model";
@@ -50,9 +50,12 @@ class AcademyService {
         throw new Error("Content creator not found");
       }
 
+      const slug = `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+
       // Create the Academy
       const academy = await this.academyModel.create({
         name,
+        slug,
         description,
         overview,
         price,
@@ -187,11 +190,16 @@ class AcademyService {
         }
       }
 
+      const slug = name
+        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        : academy.slug;
+
       // Update the document
       const updatedAcademy = await this.academyModel.findByIdAndUpdate(
         academyId,
         {
           name: name || academy.name,
+          slug: slug,
           description: description || academy.description,
           overview: overview || academy.overview,
           imageUrl: imageUrl || academy.imageUrl,
@@ -225,10 +233,10 @@ class AcademyService {
     }
   }
 
-  public async fetchAcademy(academyId: string): Promise<IAcademy | Error> {
+  public async fetchAcademy(slug: string): Promise<IAcademy | Error> {
     try {
       const academy = await this.academyModel
-        .findById(academyId)
+        .findOne({ slug })
         .populate({
           path: "tags",
           model: this.tagModel,
@@ -344,7 +352,7 @@ class AcademyService {
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1
-      let numericPageSize = pageSize ? Number(pageSize) : 1000; // Page size should default to 10
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
       const skipAmount = (numericPage - 1) * numericPageSize;
 
       const academies = await this.academyModel

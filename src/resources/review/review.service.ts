@@ -4,8 +4,8 @@ import {
 } from "@/resources/review/review.interface";
 import log from "@/utils/logger";
 import User from "@/resources/user/user.model";
-import Course from "@/resources/course/course.model";
-import Academy from "@/resources/academy/academy.model";
+import Course, { ICourse } from "@/resources/course/course.model";
+import Academy, { IAcademy } from "@/resources/academy/academy.model";
 import Review from "@/resources/review/review.model";
 import { FilterQuery, Schema } from "mongoose";
 
@@ -150,13 +150,25 @@ class ReviewService {
   public async fetchReviews(
     queryOptions: FetchReviewsInterface
   ): Promise<object | Error> {
-    const { productId, productType, approved, page, pageSize, filter } =
+    const { productSlug, productType, approved, page, pageSize, filter } =
       queryOptions;
     try {
       const query: FilterQuery<typeof this.reviewModel> = {};
 
+      // Find the product by productSlug
+      let product: IAcademy | ICourse | null;
+      if (productType === "Academy") {
+        product = await this.academyModel.findOne({ slug: productSlug });
+      } else {
+        product = await this.courseModel.findOne({ slug: productSlug });
+      }
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
+
       // Add the productId and product type to the query
-      query.productId = productId;
+      query.productId = product._id;
       query.productType = productType;
 
       // If the user specifies the approved field, then add that query

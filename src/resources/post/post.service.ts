@@ -7,6 +7,7 @@ import {
 import Post, { IPost } from "@/resources/post/post.model";
 import log from "@/utils/logger";
 import { FilterQuery, Schema } from "mongoose";
+import generateAlphanumeric from "@/utils/generateAlphanum";
 
 class PostService {
   private postModel = Post;
@@ -35,9 +36,12 @@ class PostService {
         }
       }
 
+      const slug = `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+
       // Create the post
       const post = await this.postModel.create({
         title,
+        slug,
         description,
         overview,
         userId,
@@ -96,10 +100,15 @@ class PostService {
         );
       }
 
+      const slug = title
+        ? `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        : post.slug;
+
       const updatedPost = await this.postModel.findByIdAndUpdate(
         postId,
         {
           title: title || post.title,
+          slug: slug,
           description: description || post.description,
           overview: overview || post.overview,
           imageUrl: imageUrl || post.imageUrl,
@@ -157,11 +166,11 @@ class PostService {
     }
   }
 
-  public async fetchPost(postId: string): Promise<object | Error> {
+  public async fetchPost(slug: string): Promise<object | Error> {
     try {
       // Ensure that the post exists
       const post = await this.postModel
-        .findById(postId)
+        .findOne({ slug })
         .populate({
           path: "comments",
           model: this.postModel,
@@ -350,7 +359,7 @@ class PostService {
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1
-      let numericPageSize = pageSize ? Number(pageSize) : 1000; // Page size should default to 10
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
       const skipAmount = (numericPage - 1) * numericPageSize;
 
       const posts = await this.postModel

@@ -50,7 +50,7 @@ class AcademyController implements Controller {
     );
 
     this.router.get(
-      `${this.path}/:academyId`,
+      `${this.path}/:slug`,
       validateResource(fetchAcademySchema),
       this.fetchAcademy
     );
@@ -145,9 +145,9 @@ class AcademyController implements Controller {
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
-    const { academyId } = req.params;
+    const { slug } = req.params;
     try {
-      const course = await this.academyService.fetchAcademy(academyId);
+      const course = await this.academyService.fetchAcademy(slug);
       res.status(StatusCodes.OK).json(course);
     } catch (e: any) {
       next(new HttpException(StatusCodes.BAD_REQUEST, e.message));

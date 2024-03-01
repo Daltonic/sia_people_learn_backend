@@ -16,6 +16,7 @@ import {
   productApprovalFeedback,
   productApprovalRequestMail,
 } from "@/utils/templates/mails";
+import { generateAlphanumeric } from "@/utils/index";
 
 class CourseService {
   private userModel = User;
@@ -69,11 +70,14 @@ class CourseService {
         throw new Error("Content creator not found");
       }
 
+      const slug = `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+
       // Get the newCourse object;
       let courseData: object;
       if (type === "Course") {
         courseData = {
           name,
+          slug,
           price,
           type,
           description,
@@ -87,6 +91,7 @@ class CourseService {
       } else {
         courseData = {
           name,
+          slug,
           price,
           description,
           overview,
@@ -196,10 +201,15 @@ class CourseService {
         }
       }
 
+      const slug = name
+        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        : course.slug;
+
       let updateData: object;
       if (type === "Course") {
         updateData = {
           name: name || course.name,
+          slug: slug,
           description: description || course.description,
           overview: overview || course.overview,
           price: price || course.price,
@@ -212,6 +222,7 @@ class CourseService {
       } else {
         updateData = {
           name: name || course.name,
+          slug: slug,
           description: description || course.description,
           overview: overview || course.overview,
           price: price || course.price,
@@ -268,10 +279,10 @@ class CourseService {
     }
   }
 
-  public async fetchCourse(courseId: string): Promise<ICourse | Error> {
+  public async fetchCourse(slug: string): Promise<ICourse | Error> {
     try {
       const course = await this.courseModel
-        .findById(courseId)
+        .findOne({ slug })
         .populate({
           path: "tags",
           model: this.tagModel,
@@ -393,7 +404,7 @@ class CourseService {
 
       // Estimate the number of pages to skip based on the page number and size
       let numericPage = page ? Number(page) : 1; // Page number should default to 1
-      let numericPageSize = pageSize ? Number(pageSize) : 1000; // Page size should default to 10
+      let numericPageSize = pageSize ? Number(pageSize) : 10; // Page size should default to 10
       const skipAmount = (numericPage - 1) * numericPageSize;
 
       const courses = await this.courseModel

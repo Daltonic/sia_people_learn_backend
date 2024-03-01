@@ -26,7 +26,7 @@ export const updatePostSchema = object({
 
 export const fetchPostSchema = object({
   params: object({
-    postId: string({ required_error: "Post ID is required" }),
+    slug: string({ required_error: "Slug is required" }),
   }),
 });
 

@@ -172,7 +172,7 @@ class SubscriptionService {
         })
         .populate({
           path: "productId",
-          select: "_id name difficulty overview description type imageUrl",
+          select: "_id name difficulty overview description type imageUrl slug",
         })
         .populate({
           path: "orderId",
@@ -257,7 +257,8 @@ class SubscriptionService {
             model: this.userModel,
             select: "firstName lastName",
           },
-          select: "_id name difficulty overview description rating imageUrl",
+          select:
+            "_id name difficulty overview description rating imageUrl slug",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
