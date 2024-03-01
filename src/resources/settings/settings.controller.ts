@@ -31,7 +31,7 @@ class SiteSettingsController implements Controller {
       this.createSiteSettings
     );
 
-    this.router.get(`${this.path}`, isAdmin, this.fetchSiteSettings);
+    this.router.get(`${this.path}`, this.fetchSiteSettings);
   }
 
   private createSiteSettings = async (
