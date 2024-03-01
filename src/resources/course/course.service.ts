@@ -70,7 +70,8 @@ class CourseService {
         throw new Error("Content creator not found");
       }
 
-      const slug = `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+      const slug =
+        `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
 
       // Get the newCourse object;
       let courseData: object;
@@ -202,7 +203,7 @@ class CourseService {
       }
 
       const slug = name
-        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
         : course.slug;
 
       let updateData: object;
