@@ -36,7 +36,8 @@ class PostService {
         }
       }
 
-      const slug = `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+      const slug =
+        `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
 
       // Create the post
       const post = await this.postModel.create({
@@ -101,7 +102,7 @@ class PostService {
       }
 
       const slug = title
-        ? `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        ? `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
         : post.slug;
 
       const updatedPost = await this.postModel.findByIdAndUpdate(

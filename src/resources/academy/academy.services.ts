@@ -50,7 +50,8 @@ class AcademyService {
         throw new Error("Content creator not found");
       }
 
-      const slug = `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`;
+      const slug =
+        `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
 
       // Create the Academy
       const academy = await this.academyModel.create({
@@ -191,7 +192,7 @@ class AcademyService {
       }
 
       const slug = name
-        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`
+        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
         : academy.slug;
 
       // Update the document
