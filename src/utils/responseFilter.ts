@@ -15,6 +15,8 @@ export const filteredUser = (user: IUser): Partial<IUser> => {
     lastLogin,
     subscribedAcademies,
     subscribedCourses,
+    reviewedCourses,
+    reviewedAcademies,
   } = user;
   return {
     _id,
@@ -30,5 +32,7 @@ export const filteredUser = (user: IUser): Partial<IUser> => {
     imgUrl,
     subscribedAcademies,
     subscribedCourses,
+    reviewedAcademies,
+    reviewedCourses,
   };
 };
