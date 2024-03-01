@@ -6,7 +6,7 @@ import {
   FetchAcademiesInterface,
   UpdateAcademyInterface,
 } from "@/resources/academy/academy.interface";
-import { generateAlphanumeric, log } from "@/utils/index";
+import { createSlug, generateAlphanumeric, log } from "@/utils/index";
 import Tag from "@/resources/tag/tag.model";
 import { FilterQuery, Types } from "mongoose";
 import Review from "@/resources/review/review.model";
@@ -50,8 +50,7 @@ class AcademyService {
         throw new Error("Content creator not found");
       }
 
-      const slug =
-        `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
+      const slug = createSlug(name);
 
       // Create the Academy
       const academy = await this.academyModel.create({
@@ -191,9 +190,7 @@ class AcademyService {
         }
       }
 
-      const slug = name
-        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
-        : academy.slug;
+      const slug = name ? createSlug(name) : academy.slug;
 
       // Update the document
       const updatedAcademy = await this.academyModel.findByIdAndUpdate(

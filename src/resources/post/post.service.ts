@@ -8,6 +8,7 @@ import Post, { IPost } from "@/resources/post/post.model";
 import log from "@/utils/logger";
 import { FilterQuery, Schema } from "mongoose";
 import generateAlphanumeric from "@/utils/generateAlphanum";
+import { createSlug } from "@/utils/index";
 
 class PostService {
   private postModel = Post;
@@ -36,8 +37,7 @@ class PostService {
         }
       }
 
-      const slug =
-        `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
+      const slug = createSlug(title);
 
       // Create the post
       const post = await this.postModel.create({
@@ -101,9 +101,7 @@ class PostService {
         );
       }
 
-      const slug = title
-        ? `${title.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
-        : post.slug;
+      const slug = title ? createSlug(title) : post.slug;
 
       const updatedPost = await this.postModel.findByIdAndUpdate(
         postId,
