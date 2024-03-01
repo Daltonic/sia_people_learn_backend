@@ -16,7 +16,7 @@ import {
   productApprovalFeedback,
   productApprovalRequestMail,
 } from "@/utils/templates/mails";
-import { generateAlphanumeric } from "@/utils/index";
+import { createSlug, generateAlphanumeric } from "@/utils/index";
 
 class CourseService {
   private userModel = User;
@@ -70,8 +70,7 @@ class CourseService {
         throw new Error("Content creator not found");
       }
 
-      const slug =
-        `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase();
+      const slug = createSlug(name);
 
       // Get the newCourse object;
       let courseData: object;
@@ -202,9 +201,7 @@ class CourseService {
         }
       }
 
-      const slug = name
-        ? `${name.split(" ").join("-")}-${generateAlphanumeric(6)}`.toLowerCase()
-        : course.slug;
+      const slug = name ? createSlug(name) : course.slug;
 
       let updateData: object;
       if (type === "Course") {
