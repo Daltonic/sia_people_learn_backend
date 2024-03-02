@@ -36,6 +36,8 @@ class StripeService {
         userId
       );
 
+      console.log(filteredProducts);
+
       if (filteredProducts.length === 0) {
         return Promise.resolve({});
       }
@@ -387,6 +389,7 @@ class StripeService {
           status: "Completed",
           productId: product.productId,
           productType: product.productType,
+          expiresAt: { $gte: new Date(Date.now()) },
         });
         if (!sub) {
           return product;
