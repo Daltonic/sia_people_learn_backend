@@ -6,11 +6,13 @@ import {
 } from "@/resources/lesson/lesson.interface";
 import log from "@/utils/logger";
 import Subscription from "@/resources/subscription/subscription.model";
+import User from "../user/user.model";
 
 class LessonService {
   private lessonModel = Lesson;
   private courseModel = Course;
   private subscriptionModel = Subscription;
+  private userModel = User;
 
   public async createLesson(
     lessonInput: CreateLessonInterface,
@@ -192,33 +194,51 @@ class LessonService {
 
   public async fetchLesson(
     lessonId: string,
-    subscriptionId: string,
-    userId: string
+    userId: string,
+    subscriptionId?: string
   ): Promise<object | Error> {
     try {
-      // Check that the subscription exists
-      const subscription =
-        await this.subscriptionModel.findById(subscriptionId);
-      if (!subscription) {
-        throw new Error("Invalid subscription");
-      }
-
-      // Check that the subscription has not expired
-      if (
-        subscription.status !== "Completed" ||
-        subscription.expiresAt < new Date(Date.now())
-      ) {
-        throw new Error("User does not have a valid subscription");
-      }
-
-      // Check that the subscription belongs to this user
-      if (String(subscription.userId) !== userId) {
-        throw new Error("Invalid subscription");
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
       }
 
       const lesson = await this.lessonModel.findById(lessonId);
       if (!lesson) {
         throw new Error("Lesson not found");
+      }
+
+      // Fetch the course and use it to check if current user is the course own
+      const course = await this.courseModel.findById(lesson.courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      // If this is not the course owner, then subscription ID is required to access this product
+      if (String(course.userId) !== userId) {
+        if (!subscriptionId) {
+          throw new Error("Subscription ID is required.");
+        }
+
+        // Check that the subscription exists
+        const subscription =
+          await this.subscriptionModel.findById(subscriptionId);
+        if (!subscription) {
+          throw new Error("Invalid subscription");
+        }
+
+        // Check that the subscription has not expired
+        if (
+          subscription.status !== "Completed" ||
+          subscription.expiresAt < new Date(Date.now())
+        ) {
+          throw new Error("User does not have a valid subscription");
+        }
+
+        // Check that the subscription belongs to this user
+        if (String(subscription.userId) !== userId) {
+          throw new Error("Invalid subscription");
+        }
       }
 
       return lesson;

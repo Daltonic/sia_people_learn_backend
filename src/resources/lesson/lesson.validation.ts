@@ -41,7 +41,7 @@ export const fetchLessonSchema = object({
     lessonId: string({ required_error: "Lesson ID is required" }),
   }),
   query: object({
-    subscriptionId: string({ required_error: "Subscription ID is required" }),
+    subscriptionId: string().optional(),
   }),
 });
 
