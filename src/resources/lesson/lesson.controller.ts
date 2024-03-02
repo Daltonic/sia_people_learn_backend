@@ -135,14 +135,24 @@ class LessonController implements Controller {
   };
 
   private fetchLesson = async (
-    req: Request<FetchLessonInterface["params"], {}, {}>,
+    req: Request<
+      FetchLessonInterface["params"],
+      {},
+      {},
+      FetchLessonInterface["query"]
+    >,
     res: Response,
     next: NextFunction
   ): Promise<Response | void> => {
     const { lessonId } = req.params;
     const { _id: userId } = res.locals.user;
+    const { subscriptionId } = req.query;
     try {
-      const lesson = await this.lessonService.fetchLesson(lessonId, userId);
+      const lesson = await this.lessonService.fetchLesson(
+        lessonId,
+        subscriptionId,
+        userId
+      );
       res.status(StatusCodes.OK).json(lesson);
     } catch (e: any) {
       if (e.message === "User does not have a valid subscription") {

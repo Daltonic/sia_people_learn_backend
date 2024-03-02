@@ -192,31 +192,34 @@ class LessonService {
 
   public async fetchLesson(
     lessonId: string,
+    subscriptionId: string,
     userId: string
   ): Promise<object | Error> {
     try {
+      // Check that the subscription exists
+      const subscription =
+        await this.subscriptionModel.findById(subscriptionId);
+      if (!subscription) {
+        throw new Error("Invalid subscription");
+      }
+
+      // Check that the subscription has not expired
+      if (
+        subscription.status !== "Completed" ||
+        subscription.expiresAt < new Date(Date.now())
+      ) {
+        throw new Error("User does not have a valid subscription");
+      }
+
+      // Check that the subscription belongs to this user
+      if (String(subscription.userId) !== userId) {
+        throw new Error("Invalid subscription");
+      }
+
       const lesson = await this.lessonModel.findById(lessonId);
       if (!lesson) {
         throw new Error("Lesson not found");
       }
-
-      const course = await this.courseModel.findById(lesson.courseId);
-
-      // If the current user is not an instructor, then check that user has valid subscription to this course.
-      // if (String(course?.userId) === userId) {
-      //   const subscription = await this.subscriptionModel.findOne({
-      //     userId,
-      //     productId: course?._id,
-      //   });
-
-      //   if (!subscription) {
-      //     throw new Error("User does not have a valid subscription");
-      //   }
-
-      //   if (subscription.expiresAt < new Date(Date.now())) {
-      //     throw new Error("User does not have a valid subscription");
-      //   }
-      // }
 
       return lesson;
     } catch (e: any) {
