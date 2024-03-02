@@ -31,7 +31,7 @@ class StripeService {
 
     try {
       // Check that there are no duplicate subscriptions
-      const filteredProducts = await this.filterDuplicateProducts(
+      let filteredProducts = await this.filterDuplicateProducts(
         products,
         userId
       );
@@ -384,6 +384,7 @@ class StripeService {
         // Check if this user has subscribed to this product
         const sub = await this.subscriptionModel.findOne({
           userId,
+          status: "Completed",
           productId: product.productId,
           productType: product.productType,
         });

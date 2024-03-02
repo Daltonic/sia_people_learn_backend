@@ -77,19 +77,9 @@ class ReviewService {
           { $push: { reviewedAcademies: productId } },
           { new: true }
         );
-
-        await this.academyModel.findByIdAndUpdate(productId, {
-          $push: { reviews: review._id },
-          $inc: { reviewsCount: 1 },
-        });
       } else {
         await this.userModel.findByIdAndUpdate(userId, {
           $push: { reviewedCourses: productId },
-        });
-
-        await this.courseModel.findByIdAndUpdate(productId, {
-          $push: { reviews: review._id },
-          $inc: { reviewsCount: 1 },
         });
       }
 

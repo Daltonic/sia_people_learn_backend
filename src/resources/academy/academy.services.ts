@@ -243,7 +243,7 @@ class AcademyService {
         .populate({
           path: "courses",
           model: this.courseModel,
-          select: "_id name imageUrl",
+          select: "_id name imageUrl slug",
         })
         .populate({
           path: "userId",
