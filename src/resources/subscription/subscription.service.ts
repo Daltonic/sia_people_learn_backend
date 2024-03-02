@@ -221,8 +221,14 @@ class SubscriptionService {
         query.productType = productType;
       }
 
+      // Fetch this user's subscription
+      query.userId = userId;
+
+      // Fetch subscription that has not expired
+      query.expiresAt = { $gte: new Date(Date.now()) };
+
       // Return only completed subscriptions
-      // query.status = "Completed";
+      query.status = "Completed";
 
       // Define the sorting strategy
       let sortOptions = {};
