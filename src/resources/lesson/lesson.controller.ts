@@ -150,8 +150,8 @@ class LessonController implements Controller {
     try {
       const lesson = await this.lessonService.fetchLesson(
         lessonId,
-        subscriptionId,
-        userId
+        userId,
+        subscriptionId
       );
       res.status(StatusCodes.OK).json(lesson);
     } catch (e: any) {
