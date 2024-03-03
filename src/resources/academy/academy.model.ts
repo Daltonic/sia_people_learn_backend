@@ -29,7 +29,7 @@ export interface IAcademy extends Document {
 
 const AcademySchema = new Schema<IAcademy>(
   {
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     description: { type: String, required: true },
     overview: { type: String, required: true },
     imageUrl: { type: String },
