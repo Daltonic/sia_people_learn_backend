@@ -3,6 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AnyZodObject } from "zod";
 import { StatusCodes } from "http-status-codes";
+import { log } from "../utils";
 
 const validateResource =
   (schema: AnyZodObject) =>
@@ -19,6 +20,7 @@ const validateResource =
       if (e.name === "ZodError") {
         e.issues.forEach((issue: any) => message.push(issue.message));
       }
+
       res.status(StatusCodes.BAD_REQUEST).send(message.join(", "));
     }
   };

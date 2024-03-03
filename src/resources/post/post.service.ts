@@ -28,6 +28,12 @@ class PostService {
         throw new Error("User not found");
       }
 
+      const existingTitle = await this.postModel.findOne({ title });
+      let newTitle = title;
+      if (existingTitle) {
+        newTitle = newTitle + ".";
+      }
+
       // If there is parentId, ensure that the Parent Post exists
       let parentPost: IPost | null = null;
       if (parentId) {
@@ -41,13 +47,13 @@ class PostService {
 
       // Create the post
       const post = await this.postModel.create({
-        title,
+        title: newTitle,
         slug,
         description,
         overview,
         userId,
         category: category.toUpperCase(),
-        parentId: parentId || null,
+        parentId: parentId !== "" ? parentId : null,
         imageUrl: imageUrl || null,
         published: parentId ? true : false,
       });
