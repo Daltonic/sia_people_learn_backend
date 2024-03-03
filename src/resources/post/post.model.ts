@@ -20,7 +20,7 @@ export interface IPost extends Document {
 const PostSchema = new Schema<IPost>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    title: { type: String, required: true, unique: true },
+    title: { type: String, required: true },
     category: { type: String, required: true },
     overview: { type: String, required: true },
     description: { type: String, required: true },
