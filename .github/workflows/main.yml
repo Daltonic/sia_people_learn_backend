@@ -20,6 +20,8 @@ jobs:
           script: |
             if [ ! -d "/dockerized/containers/dappmentors_backend" ]; then
               mkdir -p /dockerized/containers/dappmentors_backend
+            else
+              rm -rf /dockerized/containers/dappmentors_backend/*
             fi
 
       - name: Copy Github files to VPS
@@ -65,6 +67,7 @@ jobs:
             SUCCESS_URI=${{ secrets.SUCCESS_URI }}
             TWITTER_CONSUMER_KEY=${{ secrets.TWITTER_CONSUMER_KEY }}
             TWITTER_CONSUMER_SECRET=${{ secrets.TWITTER_CONSUMER_SECRET }}
+            PLATFORM_EMAIL=${{ secrets.PLATFORM_EMAIL }}
             EOF
 
   build_image:

@@ -1,45 +1,84 @@
-# Monthly Project Report (January 2024)
+# PeopleLearn Backend Documentation
+![PeopleLearn Platform](./screenshots/0.png)
+## Overview
 
-## Summary
+PeopleLearn is an online learning platform designed to provide users with access to a wide range of courses, lessons, and other educational resources. This document outlines the backend architecture and environment setup for the PeopleLearn project. Notably, the file storage service for this project leverages the Sia Decentralized Blockchain Network, ensuring a secure and decentralized storage solution for all educational content and user-generated files.
 
-This report outlines the progress of the project in January 2024, highlighting key accomplishments, challenges faced, and planned actions for the upcoming month.
+## Environment Variables
 
-## Highlights
+The backend of PeopleLearn relies on several environment variables for configuration. These variables are defined in the `.env` file and are crucial for the application's operation. Below is a list of the required environment variables with null values for the viewer to replace with their corresponding values:
 
-In January, we achieved significant milestones:
+### General Configuration
 
-* Successfully integrated API endpoints with the frontend.
-* Implemented critical services:
-  - Stripe payment service
-  - Email service
-  - Sia Renterd service (currently on Zen Testnet, pending mainnet release).
+- `NODE_ENV`: Specifies the environment in which the application is running. Example: `null`
+- `PORT`: The port on which the application server listens. Example: `null`
+- `MONGO_URI`: The MongoDB connection string. Example: `null`
+- `ORIGIN`: The base URL of the application. Example: `null`
+- `LOG_LEVEL`: The level of logging for the application. Example: `null`
 
-![Renterd Zen Testnet File Uploads](https://i.ibb.co/NCjP4WV/Screenshot-2024-02-02-at-1-38-35-PM.png)
+### Authentication
 
-These advancements marked the transition from backend integration to refinement, testing, and deployment stages.
+- `ACCESS_TOKEN_SECRET_KEY`: The secret key used for signing access tokens. Example: `null`
+- `REFRESH_TOKEN_SECRET_KEY`: The secret key used for signing refresh tokens. Example: `null`
+- `ACCESS_TOKEN_EXPIRES_IN`: The duration after which access tokens expire. Example: `null`
 
-## Ongoing Work
+### Social Authentication
 
-The team is currently focusing on refining, testing, and deploying the services to ensure optimal functionality.
+- `FACEBOOK_CLIENT_ID`: The Facebook application's client ID. Example: `null`
+- `FACEBOOK_CLIENT_SECRET`: The Facebook application's client secret. Example: `null`
+- `GITHUB_CLIENT_ID`: The GitHub application's client ID. Example: `null`
+- `GITHUB_CLIENT_SECRET`: The GitHub application's client secret. Example: `null`
+- `GOOGLE_CLIENT_ID`: The Google application's client ID. Example: `null`
+- `GOOGLE_CLIENT_SECRET`: The Google application's client secret. Example: `null`
+- `TWITTER_CONSUMER_KEY`: The Twitter application's consumer key. Example: `null`
+- `TWITTER_CONSUMER_SECRET`: The Twitter application's consumer secret. Example: `null`
+- `SOCIAL_REDIRECT_URL`: The URL to redirect to after social authentication. Example: `null`
 
-## Achievements
+### Payment Processing
 
-* [Seamless integration of API endpoints with the frontend](https://shorturl.at/kuO48).
-* [Implementation of critical services](https://shorturl.at/isX48): 
-   - [Stripe payment service](https://github.com/Daltonic/sia_people_learn_backend/tree/main/src/resources/processors)
-   - Email service
-   - Sia Renterd service
+- `STRIPE_SECRET_KEY`: The Stripe secret key for payment processing. Example: `null`
+- `STRIPE_ENDPOINT_SECRET`: The Stripe endpoint secret for webhook verification. Example: `null`
+- `SUCCESS_URI`: The URI to redirect to after a successful payment. Example: `null`
+- `CANCEL_URI`: The URI to redirect to after a payment is cancelled. Example: `null`
 
+### File Storage
 
-## Challenges
-* Challenges arose while testing the Sia Renterd API on Zen Testnet due to limitations of the API documentation.
-* Initial difficulties integrating Stripe as the payment processor.
+- `SIA_BUCKET`: The Sia bucket name for file storage. Example: `null`
+- `SIA_BASE_URL`: The base URL for the Sia storage service. Example: `null`
+- `SIA_API_PASSWORD`: The API password for accessing the Sia storage service. Example: `null`
 
-## Next Steps
+### Additional Configuration
 
-In February, we aim to:
+- `MAXIMUM_INSTRUCTOR_PROMO`: The maximum promo percentage an instructor can offer. Example: `null`
 
-* Finalize the project.
-* Host the Project online.
-* Launch the Renterd Service on the Mainnet.
-* Replace the old system with the new one.
+## Controllers
+
+The backend of PeopleLearn is structured around various controllers, each responsible for handling specific resources. These controllers include:
+
+- `UserController`: Manages user-related operations.
+- `SessionController`: Handles session management.
+- `CourseController`: Manages course-related operations.
+- `LessonController`: Handles lesson-related operations.
+- `AcademyController`: Manages academy-related operations.
+- `WishlistController`: Handles wishlist-related operations.
+- `PromoController`: Manages promo-related operations.
+- `OrderController`: Handles order-related operations.
+- `SubscriptionController`: Manages subscription-related operations.
+- `ReviewController`: Handles review-related operations.
+- `TestimonyController`: Manages testimony-related operations.
+- `SiteSettingsController`: Manages site settings.
+- `PostController`: Handles post-related operations.
+- `ProcessorsController`: Manages payment processors.
+- `MessageController`: Handles message-related operations.
+
+## Getting Started
+
+To get started with the PeopleLearn backend, clone the repository and install the dependencies. Then, create a `.env` file in the root directory of the project and populate it with the required environment variables as outlined above. Finally, run the application using the command `npm start` or `yarn start`.
+
+## Contributing
+
+PeopleLearn is an open-source project. Contributions are welcome! Please read the contributing guidelines before submitting pull requests.
+
+## License
+
+PeopleLearn is licensed under the MIT License. See the LICENSE file for more details.
