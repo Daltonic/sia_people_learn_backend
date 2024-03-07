@@ -10,46 +10,46 @@ The backend of PeopleLearn relies on several environment variables for configura
 
 ### General Configuration
 
-- `NODE_ENV`: Specifies the environment in which the application is running. Example: `null`
-- `PORT`: The port on which the application server listens. Example: `null`
-- `MONGO_URI`: The MongoDB connection string. Example: `null`
-- `ORIGIN`: The base URL of the application. Example: `null`
-- `LOG_LEVEL`: The level of logging for the application. Example: `null`
+- `NODE_ENV`: Specifies the environment in which the application is running.
+- `PORT`: The port on which the application server listens.
+- `MONGO_URI`: The MongoDB connection string.
+- `ORIGIN`: The base URL of the application.
+- `LOG_LEVEL`: The level of logging for the application.
 
 ### Authentication
 
-- `ACCESS_TOKEN_SECRET_KEY`: The secret key used for signing access tokens. Example: `null`
-- `REFRESH_TOKEN_SECRET_KEY`: The secret key used for signing refresh tokens. Example: `null`
-- `ACCESS_TOKEN_EXPIRES_IN`: The duration after which access tokens expire. Example: `null`
+- `ACCESS_TOKEN_SECRET_KEY`: The secret key used for signing access tokens.
+- `REFRESH_TOKEN_SECRET_KEY`: The secret key used for signing refresh tokens.
+- `ACCESS_TOKEN_EXPIRES_IN`: The duration after which access tokens expire.
 
 ### Social Authentication
 
-- `FACEBOOK_CLIENT_ID`: The Facebook application's client ID. Example: `null`
-- `FACEBOOK_CLIENT_SECRET`: The Facebook application's client secret. Example: `null`
-- `GITHUB_CLIENT_ID`: The GitHub application's client ID. Example: `null`
-- `GITHUB_CLIENT_SECRET`: The GitHub application's client secret. Example: `null`
-- `GOOGLE_CLIENT_ID`: The Google application's client ID. Example: `null`
-- `GOOGLE_CLIENT_SECRET`: The Google application's client secret. Example: `null`
-- `TWITTER_CONSUMER_KEY`: The Twitter application's consumer key. Example: `null`
-- `TWITTER_CONSUMER_SECRET`: The Twitter application's consumer secret. Example: `null`
-- `SOCIAL_REDIRECT_URL`: The URL to redirect to after social authentication. Example: `null`
+- `FACEBOOK_CLIENT_ID`: The Facebook application's client ID.
+- `FACEBOOK_CLIENT_SECRET`: The Facebook application's client secret.
+- `GITHUB_CLIENT_ID`: The GitHub application's client ID.
+- `GITHUB_CLIENT_SECRET`: The GitHub application's client secret.
+- `GOOGLE_CLIENT_ID`: The Google application's client ID.
+- `GOOGLE_CLIENT_SECRET`: The Google application's client secret.
+- `TWITTER_CONSUMER_KEY`: The Twitter application's consumer key.
+- `TWITTER_CONSUMER_SECRET`: The Twitter application's consumer secret.
+- `SOCIAL_REDIRECT_URL`: The URL to redirect to after social authentication.
 
 ### Payment Processing
 
-- `STRIPE_SECRET_KEY`: The Stripe secret key for payment processing. Example: `null`
-- `STRIPE_ENDPOINT_SECRET`: The Stripe endpoint secret for webhook verification. Example: `null`
-- `SUCCESS_URI`: The URI to redirect to after a successful payment. Example: `null`
-- `CANCEL_URI`: The URI to redirect to after a payment is cancelled. Example: `null`
+- `STRIPE_SECRET_KEY`: The Stripe secret key for payment processing.
+- `STRIPE_ENDPOINT_SECRET`: The Stripe endpoint secret for webhook verification.
+- `SUCCESS_URI`: The URI to redirect to after a successful payment.
+- `CANCEL_URI`: The URI to redirect to after a payment is cancelled.
 
 ### File Storage
 
-- `SIA_BUCKET`: The Sia bucket name for file storage. Example: `null`
-- `SIA_BASE_URL`: The base URL for the Sia storage service. Example: `null`
-- `SIA_API_PASSWORD`: The API password for accessing the Sia storage service. Example: `null`
+- `SIA_BUCKET`: The Sia bucket name for file storage.
+- `SIA_BASE_URL`: The base URL for the Sia storage service.
+- `SIA_API_PASSWORD`: The API password for accessing the Sia storage service.
 
 ### Additional Configuration
 
-- `MAXIMUM_INSTRUCTOR_PROMO`: The maximum promo percentage an instructor can offer. Example: `null`
+- `MAXIMUM_INSTRUCTOR_PROMO`: The maximum promo percentage an instructor can offer.
 
 ## Controllers
 
