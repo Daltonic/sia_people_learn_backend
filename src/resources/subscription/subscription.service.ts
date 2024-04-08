@@ -264,7 +264,7 @@ class SubscriptionService {
             select: "firstName lastName",
           },
           select:
-            "_id name difficulty overview description rating imageUrl slug",
+            "_id name imageUrl price description overview difficulty duration lessons courses rating reviewsCount requirements highlights approved submitted deleted type slug",
         })
         .skip(skipAmount)
         .limit(numericPageSize)
