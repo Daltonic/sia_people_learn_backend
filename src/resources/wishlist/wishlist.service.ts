@@ -99,7 +99,7 @@ class WishlistService {
           select: "firstName lastName username _id imgUrl",
         },
         select:
-          "_id name price description overview difficulty duration imageUrl rating reviews reviewsCount slug",
+          "_id name imageUrl price description overview difficulty duration lessons courses rating reviewsCount requirements highlights approved submitted deleted type slug",
       });
 
       return wishlists;
@@ -110,3 +110,4 @@ class WishlistService {
   }
 }
 export default WishlistService;
+// _id name imageUrl price description overview difficulty duration lessons courses rating reviewsCount requirements highlights approved submitted deleted type slug
